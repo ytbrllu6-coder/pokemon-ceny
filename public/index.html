@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pokémon ceny SK</title>
+<style>
+  :root {
+    --bg: #f6f7fb; --card: #fff; --text: #1b1f2a; --muted: #6b7280; --line: #e5e7ee;
+    --accent: #e63946; --accent-dark: #c62f3b; --good: #15803d; --good-bg: #e8f7ee; --warn: #b45309;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12141b; --card: #1c1f2a; --text: #eef0f6; --muted: #98a0b3; --line: #2b2f3d;
+      --good: #4ade80; --good-bg: #123022; --warn: #fbbf24;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  main { max-width: 860px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { margin: 0 0 4px; font-size: 1.7rem; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  form { display: flex; gap: 8px; }
+  input[type=search] {
+    flex: 1; padding: 12px 14px; font-size: 1rem; border: 1px solid var(--line); border-radius: 10px;
+    background: var(--card); color: var(--text);
+  }
+  input[type=search]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button {
+    padding: 12px 20px; font-size: 1rem; font-weight: 600; border: 0; border-radius: 10px;
+    background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button:hover { background: var(--accent-dark); }
+  button:disabled { opacity: .6; cursor: wait; }
+  .opts { margin: 10px 2px 0; display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: .9rem; }
+  .opts label { display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  .hints { margin: 10px 2px 0; font-size: .85rem; color: var(--muted); }
+  .hints a { color: var(--accent); cursor: pointer; text-decoration: none; margin-right: 8px; }
+  .hints a:hover { text-decoration: underline; }
+  #status { margin: 20px 0 8px; color: var(--muted); min-height: 1.4em; }
+  .list { display: grid; gap: 10px; }
+  .item {
+    display: grid; grid-template-columns: 72px 1fr auto; gap: 14px; align-items: center;
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+  }
+  .item.cheapest { border-color: var(--good); background: var(--good-bg); }
+  .item.out { opacity: .55; }
+  .item img { width: 72px; height: 72px; object-fit: contain; border-radius: 8px; background: #fff; }
+  .noimg { width: 72px; height: 72px; border-radius: 8px; background: var(--line); }
+  .title { font-weight: 600; margin: 0 0 4px; }
+  .meta { color: var(--muted); font-size: .88rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .badge { font-size: .75rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: var(--good); color: #fff; }
+  .stock-yes { color: var(--good); font-weight: 600; }
+  .stock-no { color: var(--warn); font-weight: 600; }
+  .buy { text-align: right; }
+  .price { font-size: 1.3rem; font-weight: 800; white-space: nowrap; }
+  .buy a { display: inline-block; margin-top: 4px; font-size: .88rem; color: var(--accent); text-decoration: none; font-weight: 600; }
+  .buy a:hover { text-decoration: underline; }
+  .shops { margin-top: 22px; font-size: .85rem; color: var(--muted); }
+  .shops span { display: inline-block; margin: 0 14px 4px 0; }
+  .shops .err { color: var(--warn); }
+  .note { margin-top: 18px; font-size: .8rem; color: var(--muted); }
+  @media (max-width: 560px) {
+    .item { grid-template-columns: 56px 1fr; }
+    .item img, .noimg { width: 56px; height: 56px; }
+    .buy { grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Pokémon ceny SK</h1>
+  <p class="sub">Zadaj Pokémon produkt a nájdem, kde je na Slovensku najlacnejšie.</p>
+
+  <form id="form">
+    <input id="q" type="search" placeholder="napr. Elite Trainer Box Destined Rivals" autocomplete="off" autofocus required minlength="2">
+    <button id="go" type="submit">Hľadať</button>
+  </form>
+  <div class="opts">
+    <label><input type="checkbox" id="onlyStock"> Skryť produkty, ktoré nie sú skladom</label>
+    <label><input type="checkbox" id="allGames"> Zahrnúť aj iné hry (nielen Pokémon)</label>
+  </div>
+  <div class="hints">Skús:
+    <a data-q="elite trainer box">elite trainer box</a>
+    <a data-q="booster bundle">booster bundle</a>
+    <a data-q="etb chaos rising">etb chaos rising</a>
+    <a data-q="30th celebration">30th celebration</a>
+  </div>
+
+  <div id="status" role="status" aria-live="polite"></div>
+  <div id="list" class="list"></div>
+  <div id="shops" class="shops"></div>
+  <p class="note">Ceny sú bez poštovného a môžu sa meniť; vždy ich over na stránke obchodu. Výsledky sa na 10 minút ukladajú do pamäte.</p>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const fmt = new Intl.NumberFormat('sk-SK', { style: 'currency', currency: 'EUR' });
+let last = null;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function render() {
+  if (!last) return;
+  const onlyStock = $('onlyStock').checked;
+  const items = last.results.filter((r) => !onlyStock || r.inStock);
+
+  $('status').textContent = items.length
+    ? `Nájdených ponúk: ${items.length}` + (last.expandedQuery !== last.query ? ` (hľadané ako „${last.expandedQuery}“)` : '')
+    : 'Nič sa nenašlo. Skús kratší alebo anglický názov (napr. „elite trainer box“).';
+
+  $('list').innerHTML = items.map((r) => `
+    <article class="item ${r.cheapest ? 'cheapest' : ''} ${r.inStock ? '' : 'out'}">
+      ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<div class="noimg"></div>'}
+      <div>
+        <p class="title">${esc(r.title)}</p>
+        <div class="meta">
+          ${r.cheapest ? '<span class="badge">NAJLACNEJŠIE</span>' : ''}
+          <span>${esc(r.shopName)}</span>
+          <span class="${r.inStock ? 'stock-yes' : 'stock-no'}">${r.inStock ? 'Skladom' : 'Nie je skladom'}</span>
+        </div>
+      </div>
+      <div class="buy">
+        <div class="price">${fmt.format(r.price)}</div>
+        <a href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">Otvoriť v obchode →</a>
+      </div>
+    </article>`).join('');
+
+  $('shops').innerHTML = last.shops.map((s) =>
+    s.ok
+      ? `<span>✓ ${esc(s.name)}: ${s.count}</span>`
+      : `<span class="err">⚠ ${esc(s.name)}: nedostupný (${esc(s.error)})</span>`
+  ).join('');
+}
+
+async function search(q) {
+  $('go').disabled = true;
+  $('status').textContent = 'Prehľadávam obchody…';
+  $('list').innerHTML = '';
+  $('shops').innerHTML = '';
+  try {
+    const params = new URLSearchParams({ q });
+    if ($('allGames').checked) params.set('all', '1');
+    const res = await fetch('/api/search?' + params);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Chyba servera');
+    last = data;
+    render();
+  } catch (err) {
+    last = null;
+    $('status').textContent = 'Chyba: ' + err.message;
+  } finally {
+    $('go').disabled = false;
+  }
+}
+
+$('form').addEventListener('submit', (e) => { e.preventDefault(); search($('q').value.trim()); });
+$('onlyStock').addEventListener('change', render);
+$('allGames').addEventListener('change', () => { if (last) search(last.query); });
+document.querySelectorAll('.hints a').forEach((a) =>
+  a.addEventListener('click', () => { $('q').value = a.dataset.q; search(a.dataset.q); })
+);
+</script>
+</body>
+</html>
