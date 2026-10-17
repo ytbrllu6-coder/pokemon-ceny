@@ -136,6 +136,29 @@
   .row .diff { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); }
   .ph { background: var(--line) !important; }
 
+  /* ukážkové produkty */
+  .feat { margin-bottom: 8px; }
+  .feat-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 26px 0 12px; }
+  .feat-head h2 { margin: 0; font-size: 1.2rem; letter-spacing: -.01em; }
+  .feat-head button { border: 0; background: none; color: var(--action); font: inherit; font-weight: 700; cursor: pointer; padding: 4px 0; }
+  .feat-head button:hover { text-decoration: underline; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
+  .tile {
+    display: flex; flex-direction: column; text-decoration: none; background: var(--surface);
+    border-radius: 10px; overflow: hidden; box-shadow: var(--shadow);
+  }
+  .tile:hover { transform: translateY(-2px); }
+  .tile .pic { aspect-ratio: 1; background: #fff; display: grid; place-items: center; }
+  .tile .pic img { width: 100%; height: 100%; object-fit: contain; }
+  .tile .pic:empty { background: var(--line); }
+  .tile .info { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .tile .name { font-size: .92rem; font-weight: 600; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .tile .foot { margin-top: auto; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .tile .price { font-size: 1.2rem; font-weight: 800; }
+  .tile .from { color: var(--muted); font-size: .82rem; }
+  @media (prefers-reduced-motion: no-preference) { .tile { transition: transform .15s ease; } }
+  @media (max-width: 680px) { .tiles { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
   /* stavy */
   .empty { background: var(--surface); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: var(--shadow); }
   .empty h2 { margin: 0 0 6px; font-size: 1.15rem; }
@@ -199,6 +222,7 @@
 
 <main>
   <div class="wrap">
+    <div id="featured" class="feat"></div>
     <div id="out" aria-live="polite"></div>
     <div id="shops" class="shops"></div>
   </div>
@@ -338,6 +362,7 @@ function render() {
 async function search(q) {
   q = q.trim();
   if (q.length < 2) return;
+  $('featured').innerHTML = '';
   $('q').value = q;
   $('go').disabled = true;
   skeleton();
@@ -358,13 +383,42 @@ async function search(q) {
   }
 }
 
+
+async function loadFeatured() {
+  try {
+    const res = await fetch('/api/featured');
+    const cats = await res.json();
+    if (state.data || !Array.isArray(cats) || !cats.length) return;
+    $('featured').innerHTML = cats.map((c, i) => `
+      <section>
+        <div class="feat-head">
+          <h2>${esc(c.title)}</h2>
+          <button type="button" data-feat="${i}">Zobraziť všetky</button>
+        </div>
+        <div class="tiles">
+          ${c.items.map((r) => `
+          <a class="tile" href="${safeUrl(r.url)}" target="_blank" rel="noopener noreferrer">
+            <div class="pic">${r.image && /^https?:\/\//i.test(r.image) ? `<img src="${esc(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</div>
+            <div class="info">
+              <span class="name">${esc(r.title)}</span>
+              <span class="foot"><span class="price">${eur.format(r.price)}</span><span class="from">${esc(r.shopName)}</span></span>
+            </div>
+          </a>`).join('')}
+        </div>
+      </section>`).join('');
+    $('featured').querySelectorAll('[data-feat]').forEach((b) =>
+      b.addEventListener('click', () => { search(cats[b.dataset.feat].q); window.scrollTo({ top: 0, behavior: 'smooth' }); })
+    );
+  } catch (e) { /* ukážky sú len bonus, chyba sa nezobrazuje */ }
+}
+
 $('form').addEventListener('submit', (e) => { e.preventDefault(); search($('q').value); });
 document.querySelectorAll('.quick button').forEach((b) =>
   b.addEventListener('click', () => search(b.dataset.q))
 );
 
 const initial = new URLSearchParams(location.search).get('q');
-if (initial) search(initial);
+if (initial) search(initial); else loadFeatured();
 </script>
 </body>
 </html>

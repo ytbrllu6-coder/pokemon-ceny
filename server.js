@@ -3,7 +3,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { searchAll } = require('./search');
+const { searchAll, featured } = require('./search');
 const { SHOPS } = require('./shops');
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -36,6 +36,15 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       console.error(err);
       return sendJson(res, 500, { error: 'Vyhľadávanie zlyhalo.' });
+    }
+  }
+
+  if (url.pathname === '/api/featured') {
+    try {
+      return sendJson(res, 200, await featured());
+    } catch (err) {
+      console.error(err);
+      return sendJson(res, 200, []);
     }
   }
 

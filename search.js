@@ -108,6 +108,8 @@ function matches(title, tokens) {
   const t = normalize(title);
   const words = t.split(' ');
   return tokens.every((tok) => {
+    // krátke slová (tin, ex, v) musia začínať slovo, inak by sa našli aj vo vnútri iných ("des-tin-ed")
+    if (tok.length <= 3) return words.some((w) => w.startsWith(tok));
     if (t.includes(tok)) return true;
     // tolerancia jedného preklepu pri dlhších slovách
     return tok.length >= 5 && words.some((w) => lev(tok, w) <= 1);
@@ -161,4 +163,26 @@ async function searchAll(rawQuery, { pokemonOnly = true } = {}) {
   return { query: rawQuery, expandedQuery: query, results, shops };
 }
 
-module.exports = { searchAll, normalize, expandQuery, correctQuery, matches };
+// ---------- ukážkové produkty na úvodnej stránke ----------
+
+const FEATURED = [
+  { title: 'Elite Trainer Boxy', q: 'elite trainer box' },
+  { title: 'Booster Bundle', q: 'booster bundle' },
+  { title: 'Booster Boxy', q: 'booster box' },
+  { title: 'Kolekcie a tiny', q: 'collection' },
+];
+let featuredCache = null;
+
+async function featured() {
+  if (featuredCache && Date.now() - featuredCache.t < CACHE_TTL_MS) return featuredCache.data;
+  const data = [];
+  for (const cat of FEATURED) {
+    const { results } = await searchAll(cat.q);
+    const items = results.filter((r) => r.inStock).slice(0, 4);
+    if (items.length) data.push({ title: cat.title, q: cat.q, items });
+  }
+  if (data.length) featuredCache = { t: Date.now(), data };
+  return data;
+}
+
+module.exports = { featured, searchAll, normalize, expandQuery, correctQuery, matches };

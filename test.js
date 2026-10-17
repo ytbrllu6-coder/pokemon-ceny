@@ -45,6 +45,12 @@ const wooFixture = [
     assert.ok(!matches('Pokémon Chaos Rising Elite Trainer Box', ['chaos', 'blaze']));
   });
 
+  await test('krátke slovo "tin" sa nenájde vo vnútri slova Destined', () => {
+    assert.ok(!matches('Pokémon Destined Rivals Booster', ['tin']));
+    assert.ok(matches('Pokémon Mega Tin Charizard', ['tin']));
+    assert.ok(matches('Pokémon Mini Tins', ['tin']));
+  });
+
   await test('oprava preklepu: bandle -> bundle', () => {
     assert.strictEqual(correctQuery('booster bandle'), 'booster bundle');
     assert.strictEqual(correctQuery('elite trainer box'), 'elite trainer box');
