@@ -83,14 +83,24 @@ function shopify({ id, name, base }) {
   };
 }
 
+// WooCommerce obchod stiahne celý katalóg (je malý) a filtrovanie prebehne u nás,
+// takže funguje aj tolerancia preklepov. Katalóg sa cachuje (pozri search.js).
 function woocommerce({ id, name, base }) {
   return {
     id,
     name,
     url: base,
-    async search(query, signal) {
-      const url = `${base}/wp-json/wc/store/v1/products?search=${encodeURIComponent(query)}&per_page=30`;
-      return parseWoo(await getJson(url, signal));
+    catalog: true,
+    async search(_query, signal) {
+      const all = [];
+      for (let page = 1; page <= 5; page++) {
+        const url = `${base}/wp-json/wc/store/v1/products?per_page=100&page=${page}`;
+        const batch = await getJson(url, signal);
+        if (!Array.isArray(batch)) break;
+        all.push(...parseWoo(batch));
+        if (batch.length < 100) break;
+      }
+      return all;
     },
   };
 }

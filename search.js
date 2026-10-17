@@ -23,6 +23,41 @@ function normalize(s) {
     .trim();
 }
 
+// Bežné slová z názvov produktov - slúžia na automatickú opravu preklepov (napr. "bandle" -> "bundle")
+const DICT = [
+  'booster', 'bundle', 'elite', 'trainer', 'box', 'collection', 'premium', 'ultra', 'super', 'tin', 'blister',
+  'display', 'pack', 'case', 'sleeved', 'build', 'battle', 'stadium', 'celebration', 'evolutions', 'album',
+  'binder', 'deck', 'starter', 'promo', 'mega', 'ascended', 'heroes', 'prismatic', 'destined', 'rivals',
+  'surging', 'sparks', 'journey', 'together', 'chaos', 'rising', 'perfect', 'order', 'phantasmal', 'flames',
+  'black', 'bolt', 'white', 'flare', 'scarlet', 'violet', 'paldea', 'obsidian', 'paradox', 'temporal',
+  'forces', 'twilight', 'masquerade', 'stellar', 'crown', 'shrouded', 'fable', 'pitch', 'charizard', 'pikachu',
+  'pokemon', 'sleeves', 'japanese', 'korean',
+];
+
+function lev(a, b) {
+  if (Math.abs(a.length - b.length) > 2) return 99;
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) {
+    for (let j = 1; j <= b.length; j++) {
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+  }
+  return d[a.length][b.length];
+}
+
+function correctQuery(q) {
+  return q
+    .split(/\s+/)
+    .map((w) => {
+      const n = normalize(w);
+      if (n.length < 4 || DICT.includes(n)) return w;
+      const near = DICT.filter((d) => lev(n, d) <= 1);
+      return near.length === 1 ? near[0] : w;
+    })
+    .join(' ');
+}
+
 function expandQuery(q) {
   return q
     .split(/\s+/)
@@ -50,7 +85,7 @@ function throttled(shopId, fn) {
 }
 
 async function queryShop(shop, query) {
-  const key = `${shop.id}|${normalize(query)}`;
+  const key = shop.catalog ? `${shop.id}|*` : `${shop.id}|${normalize(query)}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.t < CACHE_TTL_MS) return { items: hit.items, cached: true };
 
@@ -71,11 +106,16 @@ async function queryShop(shop, query) {
 
 function matches(title, tokens) {
   const t = normalize(title);
-  return tokens.every((tok) => t.includes(tok));
+  const words = t.split(' ');
+  return tokens.every((tok) => {
+    if (t.includes(tok)) return true;
+    // tolerancia jedného preklepu pri dlhších slovách
+    return tok.length >= 5 && words.some((w) => lev(tok, w) <= 1);
+  });
 }
 
 async function searchAll(rawQuery, { pokemonOnly = true } = {}) {
-  const query = expandQuery(rawQuery);
+  const query = correctQuery(expandQuery(rawQuery));
   const tokens = normalize(query).split(' ').filter(Boolean);
 
   const perShop = await Promise.all(
@@ -121,4 +161,4 @@ async function searchAll(rawQuery, { pokemonOnly = true } = {}) {
   return { query: rawQuery, expandedQuery: query, results, shops };
 }
 
-module.exports = { searchAll, normalize, expandQuery, matches };
+module.exports = { searchAll, normalize, expandQuery, correctQuery, matches };

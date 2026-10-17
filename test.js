@@ -3,7 +3,7 @@
 // Jednoduché testy bez závislostí: node test.js
 const assert = require('assert');
 const { SHOPS, parseShopify, parseWoo, decodeEntities } = require('./shops');
-const { searchAll, normalize, expandQuery, matches } = require('./search');
+const { searchAll, normalize, expandQuery, correctQuery, matches } = require('./search');
 
 let passed = 0;
 function test(name, fn) {
@@ -43,6 +43,17 @@ const wooFixture = [
   await test('matches vyžaduje všetky slová', () => {
     assert.ok(matches('Pokémon Chaos Rising Elite Trainer Box', ['chaos', 'rising']));
     assert.ok(!matches('Pokémon Chaos Rising Elite Trainer Box', ['chaos', 'blaze']));
+  });
+
+  await test('oprava preklepu: bandle -> bundle', () => {
+    assert.strictEqual(correctQuery('booster bandle'), 'booster bundle');
+    assert.strictEqual(correctQuery('elite trainer box'), 'elite trainer box');
+    assert.strictEqual(correctQuery('charizard'), 'charizard');
+  });
+
+  await test('matches toleruje jeden preklep', () => {
+    assert.ok(matches('Pokémon TCG - Booster Bundle', ['booster', 'bandle'] ));
+    assert.ok(!matches('Pokémon TCG - Booster Box', ['booster', 'bundle']));
   });
 
   await test('decodeEntities', () => {
