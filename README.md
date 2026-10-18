@@ -33,13 +33,12 @@ Skratky: `etb` = elite trainer box, `upc` = ultra premium collection, `bb` = boo
 | 64ka.sk | Shopify `/search/suggest.json` |
 | 365tcg.sk | WooCommerce Store API |
 | ihrysko.sk | výpis kategórie „Pokémon TCG“ (HTML), sťahuje sa na pozadí |
-| smarty.sk | výpis kategórie „Pokémon karty“ (HTML), sťahuje sa na pozadí |
 
 Použité sú len verejné rozhrania a stránky, ktoré robots.txt daného obchodu nezakazuje.
 
-**iHRYsko a Smarty** nemajú vyhľadávacie API (Smarty má vyhľadávanie v robots.txt zakázané), preto appka na pozadí
-stiahne výpis ich Pokémon kategórie (1 požiadavka za sekundu; iHRYsko ~54 strán raz za 3 hodiny, Smarty ~7 strán raz za
-30 minút) a hľadá v ňom sama. Po spustení servera trvá prvé načítanie iHRYska okolo minúty, dovtedy appka pri ňom
+**iHRYsko** nemá vyhľadávacie API, preto appka na pozadí stiahne výpis jeho Pokémon kategórie (1 požiadavka za sekundu,
+~54 strán raz za 3 hodiny) a hľadá v ňom sama. **Smarty** je vypnutý: jeho server automatizované požiadavky blokuje (HTTP 403),
+zdrojový kód je v `shops.js` zakomentovaný. Po spustení servera trvá prvé načítanie iHRYska okolo minúty, dovtedy appka pri ňom
 zobrazí „sa práve načítava“. Čo sa z obchodov vyčítalo, ukáže `/api/debug?shop=ihrysko` (alebo `smarty`), vrátane
 vzorky zdrojového HTML. Parser číta HTML bez ohľadu na CSS triedy, takže ho treba po zmene webu obchodu skontrolovať.
 

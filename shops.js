@@ -112,15 +112,17 @@ const SHOPS = [
     maxPages: 60,
     ttlMs: 3 * 60 * 60 * 1000,
   }),
-  listingShop({
-    id: 'smarty',
-    name: 'Smarty',
-    base: 'https://www.smarty.sk',
-    pageUrl: (p) => `https://www.smarty.sk/Produkty/pokemon-karty${p > 1 ? `?pg=${p}` : ''}`,
-    linkRe: /-\d+p\d+$/,
-    maxPages: 15,
-    ttlMs: 30 * 60 * 1000,
-  }),
+  // Smarty je vypnutý: jeho server vracia automatizovaným požiadavkám chybu HTTP 403 (zablokované).
+  // Obchádzať blokovanie nebudeme. Obnoviť ho možno, ak Smarty povolí prístup alebo poskytne cenový feed.
+  // listingShop({
+  //   id: 'smarty',
+  //   name: 'Smarty',
+  //   base: 'https://www.smarty.sk',
+  //   pageUrl: (p) => `https://www.smarty.sk/Produkty/pokemon-karty${p > 1 ? `?pg=${p}` : ''}`,
+  //   linkRe: /-\d+p\d+$/,
+  //   maxPages: 15,
+  //   ttlMs: 30 * 60 * 1000,
+  // }),
 ];
 
 module.exports = { SHOPS, parseShopify, parseWoo, decodeEntities };
