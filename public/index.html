@@ -135,6 +135,20 @@
   .row .price { font-size: 1.25rem; font-weight: 800; text-align: right; white-space: nowrap; }
   .row .diff { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); }
   .ph { background: var(--line) !important; }
+  .outcard {
+    display: grid; grid-template-columns: 64px 1fr auto auto; gap: 16px; align-items: center;
+    background: var(--surface); border-radius: 12px; border: 1px dashed var(--nostock);
+    padding: 12px 16px; margin: -10px 0 26px;
+  }
+  .outcard img, .outcard .ph { width: 64px; height: 64px; object-fit: contain; background: #fff; border-radius: 6px; }
+  .outcard .label { font-size: .8rem; font-weight: 800; color: var(--nostock); margin-bottom: 2px; }
+  .outcard h4 { margin: 0 0 3px; font-size: 1rem; font-weight: 600; line-height: 1.35; }
+  .outcard .price { font-size: 1.25rem; font-weight: 800; white-space: nowrap; }
+  @media (max-width: 680px) {
+    .outcard { grid-template-columns: 52px 1fr auto; gap: 12px; }
+    .outcard img, .outcard .ph { width: 52px; height: 52px; }
+    .outcard .go { grid-column: 2 / -1; justify-self: start; }
+  }
 
   /* ukážkové produkty */
   .feat { margin-bottom: 8px; }
@@ -260,6 +274,7 @@ function skeleton() {
 
 function sorted(list) {
   const l = [...list];
+  if (state.sort === 'price-all') return l.sort((a, b) => a.price - b.price);
   if (state.sort === 'price-desc') return l.sort((a, b) => b.price - a.price);
   if (state.sort === 'name') return l.sort((a, b) => a.title.localeCompare(b.title, 'sk'));
   return l.sort((a, b) => Number(b.inStock) - Number(a.inStock) || a.price - b.price);
@@ -271,7 +286,10 @@ function render() {
 
   const all = d.results;
   const winner = all.find((r) => r.cheapest);
-  let rest = all.filter((r) => r !== winner && (!state.onlyStock || r.inStock));
+  const outCheapest = all.filter((r) => !r.inStock).sort((a, b) => a.price - b.price)[0];
+  const outCard = !state.onlyStock && state.sort !== 'price-all' && outCheapest && (!winner || outCheapest.price < winner.price)
+    ? outCheapest : null;
+  let rest = all.filter((r) => r !== winner && r !== outCard && (!state.onlyStock || r.inStock));
   rest = sorted(rest);
 
   const shopCount = new Set(all.map((r) => r.shopId)).size;
@@ -296,7 +314,8 @@ function render() {
         <div class="controls">
           <label>Radiť podľa
             <select id="sort">
-              <option value="price">Najlacnejšie</option>
+              <option value="price">Najlacnejšie (skladom najprv)</option>
+              <option value="price-all">Najlacnejšie aj nedostupné</option>
               <option value="price-desc">Najdrahšie</option>
               <option value="name">Názov</option>
             </select>
@@ -323,6 +342,20 @@ function render() {
           </div>
           <a class="go" href="${safeUrl(winner.url)}" target="_blank" rel="noopener noreferrer">Otvoriť v obchode</a>
         </div>
+      </article>`;
+    }
+
+    if (outCard) {
+      html += `
+      <article class="outcard">
+        ${thumb(outCard, '')}
+        <div>
+          <div class="label">Najlacnejšie, ale nie je skladom</div>
+          <h4>${esc(outCard.title)}</h4>
+          <div class="meta"><span class="shop">${esc(outCard.shopName)}</span>${stock(outCard)}</div>
+        </div>
+        <div class="price">${eur.format(outCard.price)}</div>
+        <a class="go quiet" href="${safeUrl(outCard.url)}" target="_blank" rel="noopener noreferrer">Do obchodu</a>
       </article>`;
     }
 
