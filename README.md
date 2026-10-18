@@ -30,8 +30,16 @@ Skratky: `etb` = elite trainer box, `upc` = ultra premium collection, `bb` = boo
 | cardyx.sk | Shopify `/search/suggest.json` |
 | 64ka.sk | Shopify `/search/suggest.json` |
 | 365tcg.sk | WooCommerce Store API |
+| ihrysko.sk | výpis kategórie „Pokémon TCG“ (HTML), sťahuje sa na pozadí |
+| smarty.sk | výpis kategórie „Pokémon karty“ (HTML), sťahuje sa na pozadí |
 
-Použité sú len verejné vyhľadávacie rozhrania, ktoré robots.txt daného obchodu nezakazuje.
+Použité sú len verejné rozhrania a stránky, ktoré robots.txt daného obchodu nezakazuje.
+
+**iHRYsko a Smarty** nemajú vyhľadávacie API (Smarty má vyhľadávanie v robots.txt zakázané), preto appka na pozadí
+stiahne výpis ich Pokémon kategórie (1 požiadavka za sekundu; iHRYsko ~54 strán raz za 3 hodiny, Smarty ~7 strán raz za
+30 minút) a hľadá v ňom sama. Po spustení servera trvá prvé načítanie iHRYska okolo minúty, dovtedy appka pri ňom
+zobrazí „sa práve načítava“. Čo sa z obchodov vyčítalo, ukáže `/api/debug?shop=ihrysko` (alebo `smarty`), vrátane
+vzorky zdrojového HTML. Parser číta HTML bez ohľadu na CSS triedy, takže ho treba po zmene webu obchodu skontrolovať.
 
 ### Pridanie ďalšieho obchodu
 
@@ -46,7 +54,7 @@ Pred pridaním skontroluj `https://obchod.sk/robots.txt` – ak zakazuje vyhľad
 
 ### Vedome vynechané
 
-Alza.sk a Kaufland.sk automatizovaný prístup výslovne zakazujú. Heureka.sk obmedzuje vyhľadávanie v robots.txt. Nekonecno.sk, smarty.sk, cardempire.sk, beardex.eu a pokecardsk.sk majú v robots.txt zakázané stránky vyhľadávania.
+Alza.sk a Kaufland.sk automatizovaný prístup výslovne zakazujú. Heureka.sk obmedzuje vyhľadávanie v robots.txt. Nekonecno.sk, cardempire.sk, beardex.eu a pokecardsk.sk majú v robots.txt zakázané stránky vyhľadávania.
 
 ## Dobré vedieť
 

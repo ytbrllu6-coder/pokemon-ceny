@@ -84,7 +84,53 @@ function throttled(shopId, fn) {
   return run;
 }
 
+// Obchody sťahované na pozadí (listing.js): odpoveď je vždy okamžitá z pamäte,
+// obnova beží samostatne. Pri prvom spustení sa katalóg ešte sťahuje.
+const crawls = new Map(); // shopId -> { items, t, loading, retryAt, error }
+
+function backgroundItems(shop) {
+  let st = crawls.get(shop.id);
+  if (!st) {
+    st = { items: null, t: 0, loading: false, retryAt: 0, error: null };
+    crawls.set(shop.id, st);
+  }
+  const stale = !st.items || Date.now() - st.t > shop.ttlMs;
+  if (stale && !st.loading && Date.now() >= st.retryAt) {
+    st.loading = true;
+    shop
+      .crawl()
+      .then((items) => {
+        st.items = items;
+        st.t = Date.now();
+        st.error = null;
+      })
+      .catch((err) => {
+        st.error = err.message;
+        st.retryAt = Date.now() + 5 * 60 * 1000; // po chybe skúsime znova o 5 minút
+      })
+      .finally(() => {
+        st.loading = false;
+      });
+  }
+  if (st.items) return { items: st.items, cached: true };
+  const err = new Error(st.loading ? 'práve sa načítava' : st.error || 'zatiaľ nenačítané');
+  err.loading = st.loading;
+  throw err;
+}
+
+function warmUp() {
+  for (const shop of SHOPS) {
+    if (!shop.background) continue;
+    try {
+      backgroundItems(shop);
+    } catch {
+      /* očakávané: katalóg sa ešte sťahuje */
+    }
+  }
+}
+
 async function queryShop(shop, query) {
+  if (shop.background) return backgroundItems(shop);
   const key = shop.catalog ? `${shop.id}|*` : `${shop.id}|${normalize(query)}`;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.t < CACHE_TTL_MS) return { items: hit.items, cached: true };
@@ -128,7 +174,7 @@ async function searchAll(rawQuery, { pokemonOnly = true } = {}) {
         return { shop, items, cached, ms: Date.now() - started, error: null };
       } catch (err) {
         const msg = err.name === 'AbortError' ? 'vypršal čas' : err.message;
-        return { shop, items: [], cached: false, ms: Date.now() - started, error: msg };
+        return { shop, items: [], cached: false, ms: Date.now() - started, error: msg, loading: Boolean(err.loading) };
       }
     })
   );
@@ -148,6 +194,7 @@ async function searchAll(rawQuery, { pokemonOnly = true } = {}) {
       name: r.shop.name,
       url: r.shop.url,
       ok: !r.error,
+      loading: Boolean(r.loading),
       error: r.error,
       count: kept,
       cached: r.cached,
@@ -185,4 +232,4 @@ async function featured() {
   return data;
 }
 
-module.exports = { featured, searchAll, normalize, expandQuery, correctQuery, matches };
+module.exports = { warmUp, featured, searchAll, normalize, expandQuery, correctQuery, matches };

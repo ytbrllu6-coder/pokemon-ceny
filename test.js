@@ -3,6 +3,7 @@
 // Jednoduché testy bez závislostí: node test.js
 const assert = require('assert');
 const { SHOPS, parseShopify, parseWoo, decodeEntities } = require('./shops');
+const { parseListing } = require('./listing');
 const { searchAll, normalize, expandQuery, correctQuery, matches } = require('./search');
 
 let passed = 0;
@@ -108,6 +109,49 @@ const wooFixture = [
     assert.strictEqual(bb.results.length, 1);
     const bbPoke = await searchAll('booster box', { pokemonOnly: true });
     assert.strictEqual(bbPoke.results.length, 0);
+  });
+
+  await test('parseListing: cena s DPH, zľavy, dostupnosť, obrázky, kategórie sa ignorujú', () => {
+    const html = `
+    <div class="grid">
+     <div><a href="/pokemon-tcg-30th-booster-box-4p286131"><img data-src="https://doc.smarty.sk/pic/a.webp" src="/img/loading.gif" alt="Pokémon TCG: 30th Celebration Booster Box (Japanese)"></a>
+      <a href="/pokemon-tcg-30th-booster-box-4p286131" title="Pokémon TCG: 30th Celebration Booster Box (Japanese)">Pokémon TCG: 30th Celebration Booster Box (Japanese)</a>
+      <span>Na sklade &gt; 5 ks</span><strong>263,90&nbsp;€</strong><small>214,55 € bez DPH</small></div>
+     <div><a href="/pokemon-mini-tin-4p1"><img src="https://x.example/y.jpg"></a><a href="/pokemon-mini-tin-4p1">Pokémon Mini Tin</a>
+      <del>20,00 €</del><b>15,00 €</b><i>Ušetríte 5,00 €</i> <span>Očakávame</span></div>
+     <div><a href="/kategoria-c12">Kategória</a></div>
+     <div><a href="/pokemon-deck-4p2">Pokémon Deck</a> 1 299,90 € Skladom</div>
+    </div>`;
+    const r = parseListing(html, { base: 'https://www.smarty.sk', linkRe: /-\d+p\d+$/ });
+    assert.strictEqual(r.length, 3);
+    assert.strictEqual(r[0].price, 263.9);
+    assert.strictEqual(r[0].inStock, true);
+    assert.strictEqual(r[0].image, 'https://doc.smarty.sk/pic/a.webp');
+    assert.strictEqual(r[0].url, 'https://www.smarty.sk/pokemon-tcg-30th-booster-box-4p286131');
+    assert.strictEqual(r[1].price, 15);
+    assert.strictEqual(r[1].inStock, false);
+    assert.strictEqual(r[2].price, 1299.9);
+    assert.strictEqual(r[2].title, 'Pokémon Deck');
+  });
+
+  await test('parseListing: prázdna stránka nevráti nič', () => {
+    assert.deepStrictEqual(parseListing('<html><body>nič</body></html>', { base: 'https://x.sk', linkRe: /-p\d+$/ }), []);
+  });
+
+  await test('obchod na pozadí: najprv "načítava sa", potom výsledky z pamäte', async () => {
+    SHOPS.length = 0;
+    SHOPS.push({
+      id: 'bg', name: 'BG', url: 'https://bg', background: true, ttlMs: 60000,
+      crawl: async () => parseWoo(wooFixture),
+    });
+    const first = await searchAll('chaos rising');
+    assert.strictEqual(first.shops[0].ok, false);
+    assert.strictEqual(first.shops[0].loading, true);
+    await new Promise((r) => setTimeout(r, 30));
+    const second = await searchAll('chaos rising');
+    assert.strictEqual(second.shops[0].ok, true);
+    assert.strictEqual(second.results.length, 1);
+    assert.strictEqual(second.results[0].price, 85);
   });
 
   console.log(`\n${passed} testov prešlo.`);

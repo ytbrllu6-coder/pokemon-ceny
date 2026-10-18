@@ -11,19 +11,10 @@
  * Nový obchod pridáš na konci súboru do poľa SHOPS - stačí `shopify(...)` alebo `woocommerce(...)`.
  */
 
-const UA = 'Mozilla/5.0 (compatible; PokemonCeny/1.0; osobne-pouzitie)';
+const { decodeEntities } = require('./text');
+const { listingShop } = require('./listing');
 
-function decodeEntities(str) {
-  return String(str)
-    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
-    .replace(/&nbsp;/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&apos;/g, "'");
-}
+const UA = 'Mozilla/5.0 (compatible; PokemonCeny/1.0; osobne-pouzitie)';
 
 async function getJson(url, signal) {
   const res = await fetch(url, {
@@ -111,6 +102,25 @@ const SHOPS = [
   shopify({ id: 'cardyx', name: 'CardyX', base: 'https://www.cardyx.sk' }),
   shopify({ id: '64ka', name: '64ka', base: 'https://www.64ka.sk' }),
   woocommerce({ id: '365tcg', name: '365TCG', base: 'https://365tcg.sk' }),
+  // Obchody bez API: výpis Pokémon kategórie sa sťahuje na pozadí (pozri listing.js)
+  listingShop({
+    id: 'ihrysko',
+    name: 'iHRYsko',
+    base: 'https://www.ihrysko.sk',
+    pageUrl: (p) => `https://www.ihrysko.sk/pokemon-tcg-c17668${p > 1 ? `?page=${p}` : ''}`,
+    linkRe: /-p\d+$/,
+    maxPages: 60,
+    ttlMs: 3 * 60 * 60 * 1000,
+  }),
+  listingShop({
+    id: 'smarty',
+    name: 'Smarty',
+    base: 'https://www.smarty.sk',
+    pageUrl: (p) => `https://www.smarty.sk/Produkty/pokemon-karty${p > 1 ? `?pg=${p}` : ''}`,
+    linkRe: /-\d+p\d+$/,
+    maxPages: 15,
+    ttlMs: 30 * 60 * 1000,
+  }),
 ];
 
 module.exports = { SHOPS, parseShopify, parseWoo, decodeEntities };

@@ -355,6 +355,7 @@ function render() {
 
   $('shops').innerHTML = d.shops.map((s) =>
     s.ok ? `<span>${esc(s.name)}: ${s.count}</span>`
+         : s.loading ? `<span>${esc(s.name)} sa práve načítava, skús o chvíľu</span>`
          : `<span class="bad">${esc(s.name)} sa nepodarilo načítať</span>`
   ).join('');
 }

@@ -3,7 +3,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { searchAll, featured } = require('./search');
+const { searchAll, featured, warmUp } = require('./search');
 const { SHOPS } = require('./shops');
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -48,6 +48,13 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // Diagnostika obchodov sťahovaných z HTML: čo sa našlo a vzorka zdrojového HTML
+  if (url.pathname === '/api/debug') {
+    const shop = SHOPS.find((s) => s.id === url.searchParams.get('shop'));
+    if (!shop || !shop.debug) return sendJson(res, 404, { error: 'Neznámy obchod.' });
+    return sendJson(res, 200, { id: shop.id, ...shop.debug });
+  }
+
   if (url.pathname === '/api/shops') {
     return sendJson(res, 200, SHOPS.map(({ id, name, url }) => ({ id, name, url })));
   }
@@ -71,4 +78,5 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Pokémon ceny beží na http://localhost:${PORT}`);
+  setTimeout(warmUp, 1000); // stiahne katalógy obchodov na pozadí
 });
