@@ -3,7 +3,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { searchAll, featured, warmUp } = require('./search');
+const { searchAll, featured, related, warmUp } = require('./search');
 const { SHOPS } = require('./shops');
 
 const PORT = Number(process.env.PORT) || 3000;
@@ -45,6 +45,17 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       console.error(err);
       return sendJson(res, 200, []);
+    }
+  }
+
+  if (url.pathname === '/api/related') {
+    const title = (url.searchParams.get('title') || '').trim();
+    if (title.length < 3 || title.length > 200) return sendJson(res, 400, { error: 'Chýba názov produktu.' });
+    try {
+      return sendJson(res, 200, await related(title));
+    } catch (err) {
+      console.error(err);
+      return sendJson(res, 500, { error: 'Vyhľadávanie zlyhalo.' });
     }
   }
 

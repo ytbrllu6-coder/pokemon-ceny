@@ -4,7 +4,7 @@
 const assert = require('assert');
 const { SHOPS, parseShopify, parseWoo, decodeEntities } = require('./shops');
 const { parseListing } = require('./listing');
-const { searchAll, normalize, expandQuery, correctQuery, matches } = require('./search');
+const { searchAll, normalize, expandQuery, correctQuery, matches, detect } = require('./search');
 
 let passed = 0;
 function test(name, fn) {
@@ -132,6 +132,17 @@ const wooFixture = [
     assert.strictEqual(r[1].inStock, false);
     assert.strictEqual(r[2].price, 1299.9);
     assert.strictEqual(r[2].title, 'Pokémon Deck');
+  });
+
+  await test('detect: typ a edícia produktu', () => {
+    const d = (x) => { const r = detect(x); return [r.type && r.type.id, r.edition]; };
+    assert.deepStrictEqual(d('Pokémon TCG: Mega Evolution 05 Pitch Black Elite Trainer Box'), ['etb', 'Pitch Black']);
+    assert.deepStrictEqual(d('Pokémon TCG: 30th Celebration Mini Tin Pikachu'), ['tin', '30th Celebration']);
+    assert.deepStrictEqual(d('Pokémon: Mega Moonlit Tin Mega Gengar EX'), ['tin', 'Mega Evolution']);
+    assert.deepStrictEqual(d('Pokémon TCG: Destined Rivals Booster Bundle'), ['bundle', 'Destined Rivals']);
+    assert.deepStrictEqual(d('Pokémon TCG: Scarlet & Violet 151 Booster Pack'), ['booster', '151']);
+    assert.deepStrictEqual(d('Pokémon TCG: Black Bolt Elite Trainer Box'), ['etb', 'Black Bolt']);
+    assert.strictEqual(detect('Pokémon album A5').type, null);
   });
 
   await test('parseListing: prázdna stránka nevráti nič', () => {

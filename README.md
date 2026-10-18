@@ -21,6 +21,8 @@ Testy: `node test.js`
 - `shops.js` – adaptéry obchodov
 - `public/index.html` – rozhranie
 
+Po kliknutí na názov produktu sa otvorí okno so všetkými produktmi rovnakého typu a edície (napr. všetky tinky 30th Celebration). Typ a edícia sa rozpoznávajú z názvu podľa zoznamu v `search.js` (`SETS`), ktorý treba pri nových edíciách doplniť.
+
 Skratky: `etb` = elite trainer box, `upc` = ultra premium collection, `bb` = booster box.
 
 ## Zapojené obchody

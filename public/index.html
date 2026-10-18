@@ -135,6 +135,32 @@
   .row .price { font-size: 1.25rem; font-weight: 800; text-align: right; white-space: nowrap; }
   .row .diff { display: block; font-size: .82rem; font-weight: 600; color: var(--muted); }
   .ph { background: var(--line) !important; }
+  .titlebtn {
+    all: unset; cursor: pointer; font: inherit; color: inherit; border-bottom: 1px dotted var(--muted);
+  }
+  .titlebtn:hover { color: var(--action); border-bottom-color: var(--action); }
+  .titlebtn:focus-visible { outline: 3px solid var(--action); outline-offset: 2px; border-radius: 3px; }
+  .hint { font-weight: 400; font-size: .85rem; margin-left: 8px; }
+
+  dialog {
+    border: 0; border-radius: 14px; padding: 0; width: min(760px, 94vw); max-height: 88vh; overflow: auto;
+    background: var(--paper); color: var(--ink); box-shadow: 0 30px 80px -20px rgba(0, 0, 0, .6);
+  }
+  dialog::backdrop { background: rgba(8, 12, 26, .62); }
+  .rel-head {
+    position: sticky; top: 0; z-index: 1; background: var(--ink); color: #fff; padding: 16px 20px;
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+  }
+  .rel-head h2 { margin: 0; font-size: 1.25rem; letter-spacing: -.01em; }
+  .rel-head p { margin: 4px 0 0; color: #b8c2dc; font-size: .9rem; }
+  .rel-head button {
+    background: transparent; color: #fff; border: 1px solid #3a466a; border-radius: 8px;
+    padding: 6px 12px; font: inherit; cursor: pointer; white-space: nowrap;
+  }
+  .rel-head button:hover { border-color: var(--tag); }
+  #relBody { padding: 8px 20px 22px; }
+  #relBody .row:first-child { border-top: 0; }
+  #relBody .sticker { margin: 0; }
   .outcard {
     display: grid; grid-template-columns: 64px 1fr auto auto; gap: 16px; align-items: center;
     background: var(--surface); border-radius: 12px; border: 1px dashed var(--nostock);
@@ -242,6 +268,14 @@
   </div>
 </main>
 
+<dialog id="rel" aria-labelledby="relTitle">
+  <div class="rel-head">
+    <div><h2 id="relTitle"></h2><p id="relSub"></p></div>
+    <button type="button" id="relClose">Zavrieť</button>
+  </div>
+  <div id="relBody"></div>
+</dialog>
+
 <footer>
   <div class="wrap">
     <p>Ceny sú bez poštovného a môžu sa zmeniť, pred nákupom si ich over na stránke obchodu. Výsledky sa na 10 minút ukladajú do pamäte.</p>
@@ -332,7 +366,7 @@ function render() {
         ${thumb(winner, '')}
         <div>
           <span class="sticker">Najlacnejšie skladom</span>
-          <h2>${esc(winner.title)}</h2>
+          <h2><button type="button" class="titlebtn" data-related="${esc(winner.title)}">${esc(winner.title)}</button></h2>
           <div class="meta"><span class="shop">${esc(winner.shopName)}</span>${stock(winner)}</div>
         </div>
         <div class="buy">
@@ -351,7 +385,7 @@ function render() {
         ${thumb(outCard, '')}
         <div>
           <div class="label">Najlacnejšie, ale nie je skladom</div>
-          <h4>${esc(outCard.title)}</h4>
+          <h4><button type="button" class="titlebtn" data-related="${esc(outCard.title)}">${esc(outCard.title)}</button></h4>
           <div class="meta"><span class="shop">${esc(outCard.shopName)}</span>${stock(outCard)}</div>
         </div>
         <div class="price">${eur.format(outCard.price)}</div>
@@ -360,14 +394,14 @@ function render() {
     }
 
     if (rest.length) {
-      html += `<section class="rest"><h3>${winner ? 'Ďalšie ponuky' : 'Ponuky'}</h3>`;
+      html += `<section class="rest"><h3>${winner ? 'Ďalšie ponuky' : 'Ponuky'}<span class="hint">Klikni na názov a uvidíš všetky produkty rovnakého typu z tej edície.</span></h3>`;
       html += rest.map((r) => {
         const diff = winner && r.price > winner.price + 0.005 ? `<span class="diff">+${eur.format(r.price - winner.price)}</span>` : '';
         return `
         <article class="row ${r.inStock ? '' : 'out'}">
           ${thumb(r, '')}
           <div>
-            <h4>${esc(r.title)}</h4>
+            <h4><button type="button" class="titlebtn" data-related="${esc(r.title)}">${esc(r.title)}</button></h4>
             <div class="meta"><span class="shop">${esc(r.shopName)}</span>${stock(r)}</div>
           </div>
           <div class="price">${eur.format(r.price)}${diff}</div>
@@ -445,6 +479,63 @@ async function loadFeatured() {
     );
   } catch (e) { /* ukážky sú len bonus, chyba sa nezobrazuje */ }
 }
+
+function relRow(r, best) {
+  return `
+    <article class="row ${r.inStock ? '' : 'out'}">
+      ${thumb(r, '')}
+      <div>
+        <h4>${esc(r.title)}</h4>
+        <div class="meta">${r === best ? '<span class="sticker">Najlacnejšie skladom</span>' : ''}<span class="shop">${esc(r.shopName)}</span>${stock(r)}</div>
+      </div>
+      <div class="price">${eur.format(r.price)}</div>
+      <a class="go quiet" href="${safeUrl(r.url)}" target="_blank" rel="noopener noreferrer">Do obchodu</a>
+    </article>`;
+}
+
+function renderRelated(d) {
+  if (!d.type) {
+    $('relTitle').textContent = 'Podobné produkty';
+    $('relSub').textContent = '';
+    $('relBody').innerHTML = '<div class="empty"><h2>Typ produktu sa nepodarilo určiť</h2><p>Skús vyhľadať jeho názov priamo v hľadaní.</p></div>';
+    return;
+  }
+  const list = [...d.results].sort((a, b) => Number(b.inStock) - Number(a.inStock) || a.price - b.price);
+  const best = list.find((r) => r.inStock);
+  const shopCount = new Set(list.map((r) => r.shopId)).size;
+  $('relTitle').textContent = d.edition ? `${d.typeLabel}: ${d.edition}` : `${d.typeLabel} (edíciu sa nepodarilo určiť)`;
+  $('relSub').textContent = list.length
+    ? `${list.length} ${list.length === 1 ? 'ponuka' : list.length < 5 ? 'ponuky' : 'ponúk'} v ${shopCount} ${shopCount === 1 ? 'obchode' : 'obchodoch'}` +
+      (best ? `, najlacnejšie skladom ${eur.format(best.price)}` : ', nič nie je skladom')
+    : '';
+  $('relBody').innerHTML = list.length
+    ? list.map((r) => relRow(r, best)).join('')
+    : '<div class="empty"><h2>Nič sa nenašlo</h2><p>V obchodoch zatiaľ nie sú ďalšie produkty tohto typu z tejto edície.</p></div>';
+}
+
+async function openRelated(title) {
+  const dlg = $('rel');
+  $('relTitle').textContent = 'Hľadám ponuky…';
+  $('relSub').textContent = '';
+  $('relBody').innerHTML = '<div class="skel"></div><div class="skel"></div><div class="skel"></div>';
+  if (!dlg.open) dlg.showModal();
+  try {
+    const res = await fetch('/api/related?title=' + encodeURIComponent(title));
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Chyba servera');
+    renderRelated(d);
+  } catch (err) {
+    $('relTitle').textContent = 'Nepodarilo sa načítať';
+    $('relBody').innerHTML = `<div class="empty"><p>${esc(err.message)}. Skús to znova o chvíľu.</p></div>`;
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-related]');
+  if (b) openRelated(b.dataset.related);
+});
+$('relClose').addEventListener('click', () => $('rel').close());
+$('rel').addEventListener('click', (e) => { if (e.target === $('rel')) $('rel').close(); });
 
 $('form').addEventListener('submit', (e) => { e.preventDefault(); search($('q').value); });
 document.querySelectorAll('.quick button').forEach((b) =>

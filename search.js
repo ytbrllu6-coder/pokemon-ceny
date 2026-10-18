@@ -210,6 +210,57 @@ async function searchAll(rawQuery, { pokemonOnly = true } = {}) {
   return { query: rawQuery, expandedQuery: query, results, shops };
 }
 
+// ---------- súvisiace produkty (ten istý typ a edícia) ----------
+
+// Konkrétne edície (hľadajú sa od najdlhšieho názvu). Zoznam treba občas doplniť o nové edície.
+const SETS = [
+  'Chaos Rising', 'Perfect Order', 'Pitch Black', 'Phantasmal Flames', 'Ascended Heroes', '30th Celebration',
+  'Black Bolt', 'White Flare', 'Destined Rivals', 'Journey Together', 'Prismatic Evolutions', 'Surging Sparks',
+  'Stellar Crown', 'Shrouded Fable', 'Twilight Masquerade', 'Temporal Forces', 'Paldean Fates', 'Paradox Rift',
+  'Obsidian Flames', 'Paldea Evolved', '151', 'Crown Zenith', 'Silver Tempest', 'Lost Origin', 'Astral Radiance',
+  'Brilliant Stars', 'Fusion Strike', 'Celebrations', 'Evolving Skies', 'Chilling Reign', 'Battle Styles',
+  'Shining Fates', 'Vivid Voltage', "Champion's Path", 'Darkness Ablaze', 'Rebel Clash', 'Hidden Fates',
+  'Cosmic Eclipse', 'Unified Minds', 'Team Up', 'Burning Shadows',
+];
+// Základné série: použijú sa, až keď sa nenájde konkrétna edícia
+const BASE_SETS = ['Mega Evolution', 'Scarlet & Violet', 'Sword & Shield', 'Sun & Moon'];
+
+const TYPES = [
+  { id: 'etb', label: 'Elite Trainer Boxy', query: 'elite trainer box', re: /elite trainer box|\betb\b/ },
+  { id: 'bundle', label: 'Booster Bundle', query: 'booster bundle', re: /booster bundle/ },
+  { id: 'box', label: 'Booster Boxy', query: 'booster box', re: /booster box|booster display|\bdisplay\b/ },
+  { id: 'tin', label: 'Tinky', query: 'tin', re: /\b(tin|tins|tinka|tinky|plechovk\w*)\b/ },
+  { id: 'blister', label: 'Blistre', query: 'blister', re: /blister/ },
+  { id: 'collection', label: 'Kolekcie', query: 'collection', re: /collection|kolekci/ },
+  { id: 'deck', label: 'Decky', query: 'deck', re: /\bdeck\b/ },
+  { id: 'booster', label: 'Boostre', query: 'booster', re: /booster/, not: /bundle|box|blister|display|collection/ },
+];
+
+function typeOk(type, normTitle) {
+  return type.re.test(normTitle) && !(type.not && type.not.test(normTitle));
+}
+
+function detect(title) {
+  const n = normalize(title);
+  const padded = ` ${n} `;
+  const has = (name) => padded.includes(` ${normalize(name)} `);
+  const type = TYPES.find((t) => typeOk(t, n)) || null;
+  const edition =
+    SETS.filter(has).sort((a, b) => b.length - a.length)[0] ||
+    BASE_SETS.find(has) ||
+    (/\bmega\b/.test(n) ? 'Mega Evolution' : null);
+  return { type, edition };
+}
+
+async function related(title) {
+  const { type, edition } = detect(title);
+  if (!type) return { type: null, edition, results: [], shops: [] };
+  const query = [edition, type.query].filter(Boolean).join(' ');
+  const out = await searchAll(query);
+  const results = out.results.filter((r) => typeOk(type, normalize(r.title))).slice(0, 80);
+  return { type: type.id, typeLabel: type.label, edition, query, results, shops: out.shops };
+}
+
 // ---------- ukážkové produkty na úvodnej stránke ----------
 
 const FEATURED = [
@@ -232,4 +283,4 @@ async function featured() {
   return data;
 }
 
-module.exports = { warmUp, featured, searchAll, normalize, expandQuery, correctQuery, matches };
+module.exports = { related, detect, warmUp, featured, searchAll, normalize, expandQuery, correctQuery, matches };
