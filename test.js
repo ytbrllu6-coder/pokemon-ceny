@@ -4,6 +4,8 @@
 const assert = require('assert');
 const { SHOPS, parseShopify, parseWoo, decodeEntities } = require('./shops');
 const { parseListing } = require('./listing');
+const { buildQueries, normCard } = require('./cards');
+const CP = require('./public/cardparse');
 const { searchAll, normalize, expandQuery, correctQuery, matches, detect } = require('./search');
 
 let passed = 0;
@@ -143,6 +145,44 @@ const wooFixture = [
     assert.deepStrictEqual(d('Pokémon TCG: Scarlet & Violet 151 Booster Pack'), ['booster', '151']);
     assert.deepStrictEqual(d('Pokémon TCG: Black Bolt Elite Trainer Box'), ['etb', 'Black Bolt']);
     assert.strictEqual(detect('Pokémon album A5').type, null);
+  });
+
+  await test('karty: dotazy na Pokémon TCG API', () => {
+    assert.deepStrictEqual(buildQueries({ name: 'Charizard ex', number: '4', total: '102' }), [
+      'name:charizard* number:4 set.printedTotal:102',
+      'number:4 set.printedTotal:102',
+      'name:charizard* number:4',
+      'name:charizard*',
+    ]);
+    assert.deepStrictEqual(buildQueries({ number: '045', total: '198' }), ['number:45 set.printedTotal:198']);
+    assert.deepStrictEqual(buildQueries({ name: 'Mew' }), ['name:mew*']);
+    assert.deepStrictEqual(buildQueries({ number: '4' }), []);
+    assert.deepStrictEqual(buildQueries({}), []);
+  });
+
+  await test('karty: normalizácia cien z Cardmarketu', () => {
+    const c = normCard({
+      id: 'sv1-1', name: 'Pikachu', number: '1', rarity: 'Common',
+      set: { name: 'Scarlet & Violet', printedTotal: 198, ptcgoCode: 'SVI' },
+      images: { small: 'https://img/s.png' },
+      cardmarket: { url: 'https://cm/x', updatedAt: '2026/10/18',
+        prices: { avg30: 1.25, avg7: 1.1, avg1: 0, trendPrice: 1.3, lowPrice: 0.5, reverseHoloAvg30: 2.5 } },
+    });
+    assert.strictEqual(c.avg30, 1.25);
+    assert.strictEqual(c.avg1, null); // nulová cena = nie je údaj
+    assert.strictEqual(c.setTotal, 198);
+    assert.strictEqual(c.reverseAvg30, 2.5);
+    assert.strictEqual(normCard({ id: 'x', name: 'Bez ceny' }).avg30, null);
+  });
+
+  await test('sken: čítanie čísla a názvu karty z textu', () => {
+    assert.deepStrictEqual(CP.parseNumber('045/198 ★'), { number: '45', total: '198' });
+    assert.deepStrictEqual(CP.parseNumber('4 / 102'), { number: '4', total: '102' });
+    assert.strictEqual(CP.parseNumber('bez čísla'), null);
+    assert.strictEqual(CP.parseName('BASIC\nCharizard ex 330 HP\n'), 'Charizard ex');
+    assert.strictEqual(CP.parseName('Evolves from Charmeleon\nSTAGE 2 Charizard HP 150'), 'Charizard');
+    assert.strictEqual(CP.parseName('12 34'), null);
+    assert.strictEqual(CP.bestIndex([{ name: 'Charmander' }, { name: 'Charizard ex' }], 'Charzard'), 1);
   });
 
   await test('parseListing: prázdna stránka nevráti nič', () => {

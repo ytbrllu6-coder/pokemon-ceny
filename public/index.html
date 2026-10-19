@@ -199,6 +199,72 @@
   @media (prefers-reduced-motion: no-preference) { .tile { transition: transform .15s ease; } }
   @media (max-width: 680px) { .tiles { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
 
+  /* Smarty a iné obchody, ktoré treba otvoriť ručne */
+  .outside { margin-top: 26px; background: var(--surface); border: 1px dashed var(--line); border-radius: 12px; padding: 16px 18px; }
+  .outside h3 { margin: 0 0 4px; font-size: 1rem; }
+  .outside p { margin: 0 0 12px; color: var(--muted); font-size: .92rem; }
+  .outlinks { display: flex; flex-wrap: wrap; gap: 10px; }
+
+  /* skenovanie kariet */
+  .scanbtn {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; padding: 10px 18px;
+    border-radius: 99px; border: 1.5px solid var(--tag); background: transparent; color: #fff;
+    font: inherit; font-weight: 700; cursor: pointer;
+  }
+  .scanbtn:hover { background: rgba(255, 194, 26, .14); }
+  .scanbtn svg { width: 20px; height: 20px; }
+  #scan { width: min(560px, 94vw); }
+  .scan-body { padding: 16px 20px 26px; display: grid; gap: 14px; }
+  .scan-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .bigbtn {
+    display: flex; align-items: center; justify-content: center; text-align: center; padding: 16px 10px;
+    border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-weight: 700; cursor: pointer;
+  }
+  .bigbtn.primary { background: var(--action); color: var(--action-ink); border-color: transparent; }
+  .bigbtn:focus-within { outline: 3px solid var(--action); outline-offset: 2px; }
+  .scan-tip, #scanStatus { margin: 0; color: var(--muted); font-size: .9rem; }
+  #scanStatus:empty { display: none; }
+  #scanPreview img { max-width: 100%; max-height: 200px; border-radius: 8px; display: block; margin: 0 auto; }
+  .scan-form { display: grid; grid-template-columns: 1fr 130px; gap: 10px; align-items: end; }
+  .scan-form label { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); }
+  .scan-form input, .pct input {
+    font: inherit; font-size: 1rem; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; width: 100%;
+  }
+  .scan-form button {
+    grid-column: 1 / -1; border: 0; border-radius: 8px; padding: 12px; font: inherit; font-weight: 700;
+    background: var(--action); color: var(--action-ink); cursor: pointer;
+  }
+  .pct { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .9rem; }
+  .pct input { width: 78px; }
+  .cands { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .cand {
+    flex: 0 0 auto; width: 78px; border: 2px solid transparent; border-radius: 8px; background: var(--surface);
+    padding: 4px; font: inherit; font-size: .72rem; color: var(--muted); cursor: pointer; display: grid; gap: 2px; text-align: center;
+  }
+  .cand img { width: 100%; border-radius: 4px; }
+  .cand.on { border-color: var(--action); color: var(--ink); }
+  .cardres {
+    display: grid; grid-template-columns: 112px 1fr; gap: 6px 16px; background: var(--surface);
+    border-radius: 12px; padding: 16px; box-shadow: var(--shadow);
+  }
+  .cardres > img, .cardres > .ph { grid-column: 1; grid-row: 1 / span 3; width: 112px; border-radius: 6px; min-height: 150px; }
+  .cardinfo, .own, .avg { grid-column: 2; }
+  .cardinfo h3 { margin: 0 0 2px; font-size: 1.15rem; }
+  .cardinfo p { margin: 0; color: var(--muted); font-size: .88rem; }
+  .lbl { display: block; color: var(--muted); font-size: .85rem; }
+  .own .big { display: block; font-size: 2.3rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; color: var(--stock); }
+  .avg .mid { font-size: 1.3rem; font-weight: 800; }
+  .more { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 6px 0 0; }
+  .more dt { font-size: .78rem; color: var(--muted); }
+  .more dd { margin: 0; font-weight: 700; }
+  .upd { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: .8rem; }
+  .cardres .go { grid-column: 1 / -1; justify-self: start; }
+  @media (max-width: 680px) {
+    .scanbtn { width: 100%; justify-content: center; padding: 14px 16px; font-size: 1.02rem; }
+    #scan { width: 100vw; max-width: 100vw; height: 100vh; max-height: 100vh; border-radius: 0; }
+  }
+
   /* stavy */
   .empty { background: var(--surface); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: var(--shadow); }
   .empty h2 { margin: 0 0 6px; font-size: 1.15rem; }
@@ -257,6 +323,10 @@
       <button type="button" data-q="30th celebration">30th Celebration</button>
       <button type="button" data-q="tin">Tin</button>
     </div>
+    <button type="button" class="scanbtn" id="scanBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      Skenovať kartu a zistiť cenu
+    </button>
   </div>
 </section>
 
@@ -267,6 +337,29 @@
     <div id="shops" class="shops"></div>
   </div>
 </main>
+
+<dialog id="scan" aria-labelledby="scanTitle">
+  <div class="rel-head">
+    <div><h2 id="scanTitle">Cena karty</h2><p>Cardmarket, 30-dňový priemer</p></div>
+    <button type="button" id="scanClose">Zavrieť</button>
+  </div>
+  <div class="scan-body">
+    <div class="scan-actions">
+      <label class="bigbtn primary">Odfotiť kartu<input id="shotCam" type="file" accept="image/*" capture="environment" hidden></label>
+      <label class="bigbtn">Vybrať z fotiek<input id="shotPick" type="file" accept="image/*" hidden></label>
+    </div>
+    <p class="scan-tip">Karta nech vyplní celý záber zhora nadol, bez odleskov. Fotka sa spracuje v tvojom telefóne a nikam sa neposiela.</p>
+    <div id="scanPreview"></div>
+    <div id="scanStatus" role="status" aria-live="polite"></div>
+    <form id="scanForm" class="scan-form">
+      <label>Názov <input id="cName" type="text" placeholder="Charizard ex" autocomplete="off"></label>
+      <label>Číslo <input id="cNum" type="text" inputmode="numeric" placeholder="123/191" autocomplete="off"></label>
+      <button type="submit">Hľadať cenu</button>
+    </form>
+    <label class="pct">Moja cena v % z priemeru <input id="cPct" type="number" min="1" max="200" step="1" value="90"> %</label>
+    <div id="scanOut"></div>
+  </div>
+</dialog>
 
 <dialog id="rel" aria-labelledby="relTitle">
   <div class="rel-head">
@@ -299,6 +392,22 @@ function thumb(r, cls) {
 
 function stock(r) {
   return `<span class="dot ${r.inStock ? 'yes' : 'no'}">${r.inStock ? 'Skladom' : 'Nie je skladom'}</span>`;
+}
+
+function outside(q) {
+  const google = 'https://www.google.com/search?q=' + encodeURIComponent('site:smarty.sk ' + q);
+  const etb = /elite trainer|\betb\b/i.test(q)
+    ? '<a class="go quiet" href="https://www.smarty.sk/elite-trainer-box-4c14603" target="_blank" rel="noopener noreferrer">Elite Trainer Boxy na Smarty</a>' : '';
+  return `
+    <section class="outside">
+      <h3>Pozri aj Smarty</h3>
+      <p>Smarty našej appke ceny nepúšťa, takže ho otvor priamo.</p>
+      <div class="outlinks">
+        <a class="go quiet" href="https://www.smarty.sk/Produkty/pokemon-karty" target="_blank" rel="noopener noreferrer">Pokémon karty na Smarty</a>
+        ${etb}
+        <a class="go quiet" href="${esc(google)}" target="_blank" rel="noopener noreferrer">Hľadať „${esc(q)}“ na Smarty cez Google</a>
+      </div>
+    </section>`;
 }
 
 function skeleton() {
@@ -336,7 +445,7 @@ function render() {
       <div class="empty">
         <h2>Nič sme nenašli</h2>
         <p>Skús kratší názov, napríklad „booster bundle“, alebo zapni aj iné hry.</p>
-      </div>`;
+      </div>${outside(d.query)}`;
   } else {
     const corrected = d.expandedQuery.toLowerCase() !== d.query.toLowerCase()
       ? ` Hľadáme „${esc(d.expandedQuery)}“.` : '';
@@ -410,6 +519,7 @@ function render() {
       }).join('');
       html += '</section>';
     }
+    html += outside(d.query);
     $('out').innerHTML = html;
 
     $('sort').value = state.sort;
@@ -545,5 +655,7 @@ document.querySelectorAll('.quick button').forEach((b) =>
 const initial = new URLSearchParams(location.search).get('q');
 if (initial) search(initial); else loadFeatured();
 </script>
+<script src="/cardparse.js"></script>
+<script src="/scan.js"></script>
 </body>
 </html>

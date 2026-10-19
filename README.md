@@ -61,3 +61,14 @@ Alza.sk a Kaufland.sk automatizovaný prístup výslovne zakazujú. Heureka.sk o
 
 - Ceny sú bez poštovného; vždy si ich over na stránke obchodu.
 - Ak obchod zmení web alebo je nedostupný, appka ho v spodnej časti označí a ostatné obchody fungujú ďalej.
+
+
+## Skenovanie kariet (mobil)
+
+Tlačidlo „Skenovať kartu a zistiť cenu“ v úvode otvorí fotoaparát. Text z fotky (názov a číslo, napr. 123/191) sa prečíta priamo v telefóne cez tesseract.js, takže fotka sa nikam neposiela. Cena sa potom nájde cez Pokémon TCG API (`/api/card`) a zobrazí sa 30-dňový priemer z Cardmarketu a „tvoja cena“ ako percento z neho (predvolene 90 %, upraviteľné, pamätá sa v prehliadači).
+
+Voliteľne nastav v Renderi (Environment) premennú `POKEMONTCG_API_KEY` pre vyšší denný limit API.
+
+## Smarty
+
+Smarty vracia nášmu serveru HTTP 403, a blokovanie neobchádzame. Pod výsledkami sú preto odkazy, ktoré Smarty otvoria priamo v tvojom prehliadači. Ceny priamo v appke by išli len s ich povolením alebo feedom.

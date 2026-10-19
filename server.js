@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const { searchAll, featured, related, warmUp } = require('./search');
 const { SHOPS } = require('./shops');
+const { findCards, buildQueries } = require('./cards');
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -45,6 +46,24 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       console.error(err);
       return sendJson(res, 200, []);
+    }
+  }
+
+  // Cena jednotlivej karty (Cardmarket cez Pokémon TCG API)
+  if (url.pathname === '/api/card') {
+    const input = {
+      name: (url.searchParams.get('name') || '').trim().slice(0, 60),
+      number: (url.searchParams.get('number') || '').trim().slice(0, 6),
+      total: (url.searchParams.get('total') || '').trim().slice(0, 4),
+    };
+    if (!buildQueries(input).length) {
+      return sendJson(res, 400, { error: 'Zadaj názov karty alebo celé číslo (napr. 123/191).' });
+    }
+    try {
+      return sendJson(res, 200, await findCards(input));
+    } catch (err) {
+      console.error(err);
+      return sendJson(res, 502, { error: 'Ceny z Cardmarketu sa teraz nepodarilo načítať, skús to o chvíľu.' });
     }
   }
 
