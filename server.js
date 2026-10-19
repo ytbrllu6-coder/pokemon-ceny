@@ -58,10 +58,11 @@ const server = http.createServer(async (req, res) => {
     const js = `// ==UserScript==
 // @name         PokéCeny: Smarty
 // @namespace    ${origin}
-// @version      1.1
+// @version      1.2
 // @description  Keď otvoríš PokéCeny, tvoj prehliadač si sám načíta ceny zo Smarty (najviac raz za 6 hodín).
 // @match        ${origin}/*
 // @connect      www.smarty.sk
+// @run-at       document-start
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
 // ==/UserScript==

@@ -544,7 +544,11 @@ async function search(q) {
   $('q').value = q;
   $('go').disabled = true;
   skeleton();
-  history.replaceState(null, '', '?q=' + encodeURIComponent(q));
+  {
+    const u = new URLSearchParams(location.search);
+    u.set('q', q);
+    history.replaceState(null, '', '?' + u);
+  }
   try {
     const params = new URLSearchParams({ q });
     if (state.allGames) params.set('all', '1');
