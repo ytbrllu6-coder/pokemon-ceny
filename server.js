@@ -58,7 +58,7 @@ const server = http.createServer(async (req, res) => {
     const js = `// ==UserScript==
 // @name         PokéCeny: Smarty
 // @namespace    ${origin}
-// @version      1.0
+// @version      1.1
 // @description  Keď otvoríš PokéCeny, tvoj prehliadač si sám načíta ceny zo Smarty (najviac raz za 6 hodín).
 // @match        ${origin}/*
 // @connect      www.smarty.sk
@@ -69,25 +69,35 @@ const server = http.createServer(async (req, res) => {
   const KEY = 'pokeceny.smarty';
   const BASE = 'https://www.smarty.sk/Produkty/pokemon-karty';
   const gm = typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : (o) => GM.xmlHttpRequest(o);
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:99999;max-width:90vw;padding:8px 14px;border-radius:8px;font:600 13px system-ui,sans-serif;color:#fff;background:#37474f;display:none';
+  document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
+  const say = (t, bad) => { box.textContent = 'Smarty: ' + t; box.style.background = bad ? '#b3261e' : '#37474f'; box.style.display = 'block'; if (!box.parentNode && document.body) document.body.appendChild(box); console.log('[Smarty]', t); };
+  const force = new URLSearchParams(location.search).get('smarty') === 'force';
   try {
     const old = JSON.parse(localStorage.getItem(KEY) || 'null');
-    if (old && Date.now() - old.at < 6 * 3600 * 1000) return;
+    if (!force && old && Date.now() - old.at < 6 * 3600 * 1000) { console.log('[Smarty] ceny su cerstve (' + old.items.length + ')'); return; }
   } catch (e) {}
-  const get = (u) => new Promise((ok, no) => gm({ method: 'GET', url: u, onload: (r) => (r.status === 200 ? ok(r.responseText) : no(new Error('HTTP ' + r.status))), onerror: () => no(new Error('sieť')) }));
+  const get = (u) => new Promise((ok, no) => gm({ method: 'GET', url: u, timeout: 20000,
+    onload: (r) => (r.status === 200 ? ok(r.responseText) : no(new Error('HTTP ' + r.status))),
+    onerror: () => no(new Error('pripojenie zlyhalo alebo je zablokovane')), ontimeout: () => no(new Error('vyprsal cas')) }));
+  say('načítavam…');
   const seenLinks = new Set();
   const items = new Map();
   for (let p = 1; p <= 15; p++) {
     let html;
-    try { html = await get(p > 1 ? BASE + '?pg=' + p : BASE); } catch (e) { if (p === 1) return; break; }
-    const fresh = [...html.matchAll(/href="([^"#?]*-\\d+p\\d+)"/g)].map((m) => m[1]).filter((l) => !seenLinks.has(l));
-    if (!fresh.length) break;
+    try { html = await get(p > 1 ? BASE + '?pg=' + p : BASE); } catch (e) { if (p === 1) { say('nepodarilo sa otvoriť Smarty (' + e.message + ')', true); return; } break; }
+    const fresh = [...html.matchAll(/href="([^"#?]*-\d+p\d+)"/g)].map((m) => m[1]).filter((l) => !seenLinks.has(l));
+    if (!fresh.length) { if (p === 1) say('na stránke sa nenašli odkazy na produkty', true); break; }
     fresh.forEach((l) => seenLinks.add(l));
     const res = await fetch('/api/parse-listing?shop=smarty', { method: 'POST', body: html });
     if (res.ok) for (const it of (await res.json()).items) items.set(it.url, it);
+    say('načítavam… strana ' + p + ', produktov ' + items.size);
     await new Promise((r) => setTimeout(r, 1000));
   }
-  if (!items.size) return;
+  if (!items.size) { say('nenašli sa žiadne produkty s cenou', true); return; }
   localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), items: [...items.values()] }));
+  say('hotovo, uložených ' + items.size + ' produktov');
   const q = new URLSearchParams(location.search).get('q');
   if (q && typeof search === 'function') search(q);
 })();
