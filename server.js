@@ -52,6 +52,50 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // Používateľský skript (Tampermonkey/Userscripts): sám načíta Smarty v prehliadači používateľa
+  if (url.pathname === '/pokeceny-smarty.user.js') {
+    const origin = `${req.headers['x-forwarded-proto'] || 'http'}://${req.headers.host}`;
+    const js = `// ==UserScript==
+// @name         PokéCeny: Smarty
+// @namespace    ${origin}
+// @version      1.0
+// @description  Keď otvoríš PokéCeny, tvoj prehliadač si sám načíta ceny zo Smarty (najviac raz za 6 hodín).
+// @match        ${origin}/*
+// @connect      www.smarty.sk
+// @grant        GM_xmlhttpRequest
+// @grant        GM.xmlHttpRequest
+// ==/UserScript==
+(async () => {
+  const KEY = 'pokeceny.smarty';
+  const BASE = 'https://www.smarty.sk/Produkty/pokemon-karty';
+  const gm = typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest : (o) => GM.xmlHttpRequest(o);
+  try {
+    const old = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (old && Date.now() - old.at < 6 * 3600 * 1000) return;
+  } catch (e) {}
+  const get = (u) => new Promise((ok, no) => gm({ method: 'GET', url: u, onload: (r) => (r.status === 200 ? ok(r.responseText) : no(new Error('HTTP ' + r.status))), onerror: () => no(new Error('sieť')) }));
+  const seenLinks = new Set();
+  const items = new Map();
+  for (let p = 1; p <= 15; p++) {
+    let html;
+    try { html = await get(p > 1 ? BASE + '?pg=' + p : BASE); } catch (e) { if (p === 1) return; break; }
+    const fresh = [...html.matchAll(/href="([^"#?]*-\\d+p\\d+)"/g)].map((m) => m[1]).filter((l) => !seenLinks.has(l));
+    if (!fresh.length) break;
+    fresh.forEach((l) => seenLinks.add(l));
+    const res = await fetch('/api/parse-listing?shop=smarty', { method: 'POST', body: html });
+    if (res.ok) for (const it of (await res.json()).items) items.set(it.url, it);
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  if (!items.size) return;
+  localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), items: [...items.values()] }));
+  const q = new URLSearchParams(location.search).get('q');
+  if (q && typeof search === 'function') search(q);
+})();
+`;
+    res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
+    return res.end(js);
+  }
+
   // Spracovanie HTML výpisu, ktorý poslal prehliadač používateľa (nič sa neukladá)
   if (url.pathname === '/api/parse-listing' && req.method === 'POST') {
     const cfg = LISTING_SHOPS[url.searchParams.get('shop')];

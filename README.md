@@ -76,3 +76,5 @@ Smarty vracia nášmu serveru HTTP 403, a blokovanie neobchádzame. Pod výsledk
 ### Smarty cez záložku
 
 Na stránke `/smarty.html` je záložka (bookmarklet). Keď ju klikneš na smarty.sk, tvoj prehliadač načíta výpis Pokémon kategórie (max. 15 strán, 1 za sekundu) a pošle ho do PokéCien. Server HTML len spracuje (`/api/parse-listing`), nič neukladá, a ponuky sa uložia do localStorage tvojho prehliadača. Nič sa neobchádza.
+
+Automaticky: `/pokeceny-smarty.user.js` je skript pre Tampermonkey/Userscripts. Pri otvorení PokéCien si prehliadač používateľa sám načíta Smarty (najviac raz za 6 hodín, 1 požiadavka za sekundu).
