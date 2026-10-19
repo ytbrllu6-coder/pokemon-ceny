@@ -87,7 +87,7 @@ const server = http.createServer(async (req, res) => {
   for (let p = 1; p <= 15; p++) {
     let html;
     try { html = await get(p > 1 ? BASE + '?pg=' + p : BASE); } catch (e) { if (p === 1) { say('nepodarilo sa otvoriť Smarty (' + e.message + ')', true); return; } break; }
-    const fresh = [...html.matchAll(/href="([^"#?]*-\d+p\d+)"/g)].map((m) => m[1]).filter((l) => !seenLinks.has(l));
+    const fresh = [...html.matchAll(/href="([^"#?]*-\\d+p\\d+)"/g)].map((m) => m[1]).filter((l) => !seenLinks.has(l));
     if (!fresh.length) { if (p === 1) say('na stránke sa nenašli odkazy na produkty', true); break; }
     fresh.forEach((l) => seenLinks.add(l));
     const res = await fetch('/api/parse-listing?shop=smarty', { method: 'POST', body: html });
