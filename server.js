@@ -6,6 +6,9 @@ const path = require('path');
 const { searchAll, featured, related, warmUp } = require('./search');
 const { SHOPS } = require('./shops');
 const { findCards, buildQueries } = require('./cards');
+const { parseListing } = require('./listing');
+
+const LISTING_SHOPS = { smarty: { base: 'https://www.smarty.sk', linkRe: /-\d+p\d+$/ } };
 
 const PORT = Number(process.env.PORT) || 3000;
 const PUBLIC_DIR = path.join(__dirname, 'public');
@@ -47,6 +50,23 @@ const server = http.createServer(async (req, res) => {
       console.error(err);
       return sendJson(res, 200, []);
     }
+  }
+
+  // Spracovanie HTML výpisu, ktorý poslal prehliadač používateľa (nič sa neukladá)
+  if (url.pathname === '/api/parse-listing' && req.method === 'POST') {
+    const cfg = LISTING_SHOPS[url.searchParams.get('shop')];
+    if (!cfg) return sendJson(res, 400, { error: 'Neznámy obchod.' });
+    let body = '';
+    let size = 0;
+    for await (const chunk of req) {
+      size += chunk.length;
+      if (size > 4_000_000) return sendJson(res, 413, { error: 'Stránka je príliš veľká.' });
+      body += chunk;
+    }
+    const items = parseListing(body, cfg)
+      .filter((it) => it.url.startsWith(cfg.base + '/'))
+      .map((it) => ({ ...it, image: it.image && it.image.startsWith('https://') ? it.image : null }));
+    return sendJson(res, 200, { items });
   }
 
   // Cena jednotlivej karty (Cardmarket cez Pokémon TCG API)

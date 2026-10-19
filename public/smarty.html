@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smarty v PokéCeny</title>
+<style>
+  :root { --bg:#f6f7fb; --ink:#14192b; --muted:#5b6275; --card:#fff; --line:#dfe3ee; --btn:#ffc21a; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0e1220; --ink:#eef0f8; --muted:#a3abc2; --card:#171c30; --line:#2a3150; } }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui,sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 28px 16px 60px; }
+  h1 { font-size: 1.6rem; margin: 0 0 8px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin:16px 0; }
+  a.bm { display:inline-block; padding:12px 20px; border-radius:99px; background:var(--btn); color:#14192b; font-weight:800; text-decoration:none; cursor:grab; }
+  ol { padding-left: 20px; } li { margin: 8px 0; } small, .muted { color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Smarty v PokéCeny</h1>
+  <p>Smarty našej appke ceny nepúšťa. Preto si ich načíta tvoj vlastný prehliadač, keď si Smarty otvoríš ty. Nič sa neobchádza a ceny sa uložia len u teba.</p>
+
+  <div class="card">
+    <p><strong>1. Pridaj si záložku</strong></p>
+    <p><a class="bm" id="bm" href="#">Smarty do PokéCien</a></p>
+    <p class="muted"><small>Na počítači ju potiahni na lištu záložiek. V telefóne ulož túto stránku do záložiek a potom ju v záložkách premenuj a ako adresu nastav kód odkazu (dlho podrž odkaz a skopíruj ho).</small></p>
+  </div>
+  <div class="card">
+    <p><strong>2. Použi ju</strong></p>
+    <ol>
+      <li>Otvor <a href="https://www.smarty.sk/Produkty/pokemon-karty" target="_blank" rel="noopener">Pokémon karty na Smarty</a>.</li>
+      <li>Klikni na záložku „Smarty do PokéCien“.</li>
+      <li>Otvorí sa PokéCeny a po pár sekundách ohlási, že ponuky sú uložené. Potom sa Smarty zobrazuje vo výsledkoch.</li>
+    </ol>
+    <p class="muted"><small>Ceny sa nemenia samy, preto záložku občas pusti znova. Pri každom výsledku vidíš, od kedy ceny zo Smarty sú.</small></p>
+  </div>
+  <p><a href="/">Späť na PokéCeny</a></p>
+</main>
+<script>
+  const code = `(()=>{const O=${JSON.stringify(location.origin)};let ready=false;addEventListener('message',e=>{if(e.origin===O&&e.data==='pokeceny-ready')ready=true});const w=open(O+'/?smarty=1','pokeceny');if(!w){alert('Povol vyskakovacie okná.');return}(async()=>{const pages=[],seen=new Set();for(let p=1;p<=15;p++){const r=await fetch(location.origin+'/Produkty/pokemon-karty'+(p>1?'?pg='+p:''),{credentials:'same-origin'});if(!r.ok)break;const h=await r.text();const f=[...h.matchAll(/href="([^"#?]*-\\d+p\\d+)"/g)].map(m=>m[1]).filter(l=>!seen.has(l));if(!f.length)break;f.forEach(l=>seen.add(l));pages.push(h);await new Promise(r=>setTimeout(r,1000))}for(let i=0;i<100&&!ready;i++)await new Promise(r=>setTimeout(r,200));w.postMessage({type:'smarty',pages},O)})()})()`;
+  document.getElementById('bm').href = 'javascript:' + encodeURIComponent(code);
+</script>
+</body>
+</html>

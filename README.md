@@ -72,3 +72,7 @@ Voliteľne nastav v Renderi (Environment) premennú `POKEMONTCG_API_KEY` pre vy�
 ## Smarty
 
 Smarty vracia nášmu serveru HTTP 403, a blokovanie neobchádzame. Pod výsledkami sú preto odkazy, ktoré Smarty otvoria priamo v tvojom prehliadači. Ceny priamo v appke by išli len s ich povolením alebo feedom.
+
+### Smarty cez záložku
+
+Na stránke `/smarty.html` je záložka (bookmarklet). Keď ju klikneš na smarty.sk, tvoj prehliadač načíta výpis Pokémon kategórie (max. 15 strán, 1 za sekundu) a pošle ho do PokéCien. Server HTML len spracuje (`/api/parse-listing`), nič neukladá, a ponuky sa uložia do localStorage tvojho prehliadača. Nič sa neobchádza.

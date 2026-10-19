@@ -401,7 +401,7 @@ function outside(q) {
   return `
     <section class="outside">
       <h3>Pozri aj Smarty</h3>
-      <p>Smarty našej appke ceny nepúšťa, takže ho otvor priamo.</p>
+      <p>Smarty našej appke ceny nepúšťa. Môžeš si ich ale <a href="/smarty.html">načítať cez záložku vo svojom prehliadači</a>, alebo ho otvor priamo.</p>
       <div class="outlinks">
         <a class="go quiet" href="https://www.smarty.sk/Produkty/pokemon-karty" target="_blank" rel="noopener noreferrer">Pokémon karty na Smarty</a>
         ${etb}
@@ -551,7 +551,7 @@ async function search(q) {
     const res = await fetch('/api/search?' + params);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Chyba servera');
-    state.data = data;
+    state.data = typeof mergeSmarty === 'function' ? mergeSmarty(data) : data;
     render();
   } catch (err) {
     state.data = null;
@@ -657,5 +657,6 @@ if (initial) search(initial); else loadFeatured();
 </script>
 <script src="/cardparse.js"></script>
 <script src="/scan.js"></script>
+<script src="/smarty.js"></script>
 </body>
 </html>
