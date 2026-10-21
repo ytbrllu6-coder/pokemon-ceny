@@ -6,7 +6,7 @@ const path = require('path');
 const { searchAll, featured, related, warmUp } = require('./search');
 const { SHOPS } = require('./shops');
 const { findCards, buildQueries } = require('./cards');
-const { findTcgdex } = require('./tcgdex');
+const { findTcgdex, debugTcgdex } = require('./tcgdex');
 const { parseListing } = require('./listing');
 const external = require('./external');
 
@@ -149,6 +149,13 @@ const server = http.createServer(async (req, res) => {
       .filter((it) => it.url.startsWith(cfg.base + '/'))
       .map((it) => ({ ...it, image: it.image && it.image.startsWith('https://') ? it.image : null }));
     return sendJson(res, 200, { items });
+  }
+
+  if (url.pathname === '/api/debug-tcgdex') {
+    return sendJson(res, 200, await debugTcgdex({
+      name: (url.searchParams.get('name') || '').slice(0, 60),
+      number: (url.searchParams.get('number') || '').slice(0, 6),
+    }));
   }
 
   // Cena jednotlivej karty (Cardmarket cez Pokémon TCG API)

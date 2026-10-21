@@ -63,4 +63,21 @@ async function findTcgdex({ name, number }) {
   return details.filter(Boolean).map(normTcgdex);
 }
 
-module.exports = { findTcgdex, normTcgdex };
+// diagnostika: surové odpovede TCGdex (na kontrolu tvaru dát)
+async function debugTcgdex({ name, number }) {
+  const q = new URLSearchParams({ localId: String(number || '') });
+  if (name) q.set('name', String(name).slice(0, 60));
+  const out = { url: `${API}/cards?${q}` };
+  try {
+    const list = await getJson(out.url);
+    out.count = Array.isArray(list) ? list.length : null;
+    out.list = Array.isArray(list) ? list.slice(0, 12) : list;
+    const last = Array.isArray(list) && list.length ? list[list.length - 1].id : null;
+    if (last) out.detail = await getJson(`${API}/cards/${encodeURIComponent(last)}`);
+  } catch (err) {
+    out.error = err.message;
+  }
+  return out;
+}
+
+module.exports = { findTcgdex, normTcgdex, debugTcgdex };
