@@ -173,21 +173,20 @@ const server = http.createServer(async (req, res) => {
         console.error(err);
         return { cards: [], query: null, failed: true };
       });
-      // karty bez ceny doplníme zo záložného zdroja (ceny z Cardmarketu aj pre novšie sety)
-      if (input.number && (found.failed || found.cards.some((c) => !c.avg30))) {
+      // čerstvé ceny z TCGdex (obnovuje sa denne) majú prednosť, pokemontcg.io ich má často zastarané alebo prázdne
+      if (input.number) {
         const extra = await findTcgdex(input).catch((err) => {
           console.error('tcgdex', err.message);
           return [];
         });
+        const key = (c) => `${(c.setName || '').toLowerCase().replace(/[^a-z0-9]+/g, '')}|${c.number}`;
         const priced = extra.filter((c) => c.avg30);
-        const have = new Set(found.cards.filter((c) => c.avg30).map((c) => `${(c.setName || '').toLowerCase()}|${c.number}`));
-        const added = priced.filter((c) => !have.has(`${(c.setName || '').toLowerCase()}|${c.number}`));
-        const unpriced = found.cards.filter((c) => !c.avg30 && !priced.some((p) => (p.setName || '').toLowerCase() === (c.setName || '').toLowerCase() && p.number === c.number));
-        found.cards = [...found.cards.filter((c) => c.avg30), ...added, ...unpriced];
+        const covered = new Set(priced.map(key));
+        const rest = found.cards.filter((c) => !covered.has(key(c)));
+        found.cards = [...priced, ...rest.filter((c) => c.avg30), ...rest.filter((c) => !c.avg30)];
         delete found.failed;
-      } else if (found.failed) {
-        throw new Error('zdroj nedostupný');
       }
+      if (found.failed) throw new Error('zdroj nedostupný');
       return sendJson(res, 200, found);
     } catch (err) {
       console.error(err);

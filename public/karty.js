@@ -332,7 +332,9 @@
           ${c.reverseAvg30 ? `<div><dt>Reverse holo, 30 dní</dt><dd>${fmt(c.reverseAvg30)}</dd></div>` : ''}
         </dl>
         <p class="upd">${c.updated ? 'Ceny aktualizované ' + esc(c.updated) + '. ' : ''}Zdroj: Cardmarket cez Pokémon TCG API.</p>
-        ${c.cmUrl && /^https?:\/\//i.test(c.cmUrl) ? `<a class="go" href="${esc(c.cmUrl)}" target="_blank" rel="noopener noreferrer">Otvoriť na Cardmarkete</a>` : ''}
+        ${c.cmUrl && /^https?:\/\//i.test(c.cmUrl)
+          ? `<a class="go" href="${esc(c.cmUrl)}" target="_blank" rel="noopener noreferrer">Otvoriť na Cardmarkete</a>`
+          : `<a class="go quiet" href="https://www.cardmarket.com/en/Pokemon/Products/Search?searchString=${encodeURIComponent(c.name + ' ' + (c.setName || ''))}" target="_blank" rel="noopener noreferrer">Hľadať na Cardmarkete</a>`}
       </article>`;
   }
 
