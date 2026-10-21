@@ -8,7 +8,7 @@
   const P = window.CardParse;
   const out = $('out');
   const statusEl = $('status');
-  const state = { cands: [], idx: 0 };
+  const state = { cands: [], idx: 0, manual: 0, manualRaw: '' };
   const CARD_RATIO = 63 / 88; // šírka / výška karty
   let tessPromise = null;
   let stream = null;
@@ -282,6 +282,8 @@
       if (!res.ok) throw new Error(d.error || 'Chyba servera');
       state.cands = d.cards;
       state.idx = P.bestIndex(d.cards, name);
+      state.manual = 0;
+      state.manualRaw = '';
       setStatus(d.cards.length ? '' : 'Nenašla sa žiadna karta. Skontroluj meno a číslo.');
       render();
     } catch (err) {
@@ -298,7 +300,9 @@
       return;
     }
     const p = pct();
-    const own = c.avg30 ? Math.round(c.avg30 * p) / 100 : null;
+    const manual = state.manual > 0 ? state.manual : null;
+    const base = c.avg30 || manual;
+    const own = base ? Math.round(base * p) / 100 : null;
 
     const strip = state.cands.length > 1
       ? `<div class="cands" role="list" aria-label="Ďalšie nájdené karty">${state.cands.map((x, i) => `
@@ -316,16 +320,18 @@
           <h3>${esc(c.name)}</h3>
           <p>${esc(c.setName || '')}${c.setName ? ', ' : ''}č. ${esc(c.number)}${c.setTotal ? '/' + esc(c.setTotal) : ''}${c.rarity ? ', ' + esc(c.rarity) : ''}</p>
         </div>
-        ${c.avg30 ? `
+        ${base ? `
         <div class="own">
           <span class="lbl">Tvoja cena (${p} % z priemeru)</span>
           <span class="big">${fmt(own)}</span>
         </div>
         <div class="avg">
-          <span class="lbl">Cardmarket, 30-dňový priemer</span>
-          <span class="mid">${fmt(c.avg30)}</span>
+          <span class="lbl">${c.avg30 ? 'Cardmarket, 30-dňový priemer' : '30-dňový priemer, ktorý si zadal'}</span>
+          <span class="mid">${fmt(base)}</span>
         </div>` : `
-        <div class="own"><span class="lbl">Cardmarket nemá pre túto kartu 30-dňový priemer</span></div>`}
+        <div class="own"><span class="lbl">Túto kartu ešte nemáme v databáze cien. Pozri 30-dňový priemer na Cardmarkete a zadaj ho nižšie, tvoju cenu dopočítam.</span></div>`}
+        ${c.avg30 ? '' : `<label class="manual">30-dňový priemer z Cardmarketu (€)
+          <input id="manualAvg" type="text" inputmode="decimal" placeholder="napr. 55,11" value="${esc(state.manualRaw)}" autocomplete="off"></label>`}
         <dl class="more">
           <div><dt>Trend</dt><dd>${fmt(c.trend)}</dd></div>
           <div><dt>7 dní</dt><dd>${fmt(c.avg7)}</dd></div>
@@ -349,6 +355,16 @@
   $('cPct').addEventListener('input', () => {
     try { localStorage.setItem('pokeceny.pct', String(pct())); } catch { /* bez ukladania */ }
     render();
+  });
+  out.addEventListener('input', (e) => {
+    if (e.target.id !== 'manualAvg') return;
+    const v = parseFloat(e.target.value.replace(/\s/g, '').replace(',', '.'));
+    state.manualRaw = e.target.value;
+    state.manual = v > 0 && v < 1000000 ? v : 0;
+    const pos = e.target.selectionStart;
+    render();
+    const el = $('manualAvg');
+    if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch { /* nič */ } }
   });
   out.addEventListener('click', (e) => {
     const b = e.target.closest('[data-i]');
