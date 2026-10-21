@@ -50,30 +50,33 @@ async function getJson(url) {
   }
 }
 
-// názov + číslo karty -> karty s cenami (najviac 8)
-async function findTcgdex({ name, number }) {
+const sameNumber = (c, num) => String(c.localId ?? '').replace(/^0+(?=\d)/, '') === num;
+
+// názov + číslo karty -> karty s cenami (najviac 12; filter TCGdex hľadá aj čiastočnú zhodu, preto presná zhoda číslom)
+async function listExact({ name, number }) {
   const num = number != null && /^\d{1,3}$/.test(String(number)) ? String(Number(number)) : null;
-  if (!num) return [];
+  if (!num) return { num: null, items: [] };
   const q = new URLSearchParams({ localId: num });
   if (name) q.set('name', String(name).slice(0, 60));
   const list = await getJson(`${API}/cards?${q}`);
-  if (!Array.isArray(list)) return [];
-  const ids = list.slice(-8).map((c) => c.id).filter(Boolean); // najnovšie sety sú na konci
-  const details = await Promise.all(ids.map((id) => getJson(`${API}/cards/${encodeURIComponent(id)}`).catch(() => null)));
+  const items = (Array.isArray(list) ? list : []).filter((c) => c.id && sameNumber(c, num));
+  return { num, items };
+}
+
+async function findTcgdex(input) {
+  const { items } = await listExact(input);
+  const details = await Promise.all(items.slice(0, 12).map((c) => getJson(`${API}/cards/${encodeURIComponent(c.id)}`).catch(() => null)));
   return details.filter(Boolean).map(normTcgdex);
 }
 
-// diagnostika: surové odpovede TCGdex (na kontrolu tvaru dát)
-async function debugTcgdex({ name, number }) {
-  const q = new URLSearchParams({ localId: String(number || '') });
-  if (name) q.set('name', String(name).slice(0, 60));
-  const out = { url: `${API}/cards?${q}` };
+// diagnostika: stručný prehľad, čo TCGdex vracia
+async function debugTcgdex(input) {
+  const out = {};
   try {
-    const list = await getJson(out.url);
-    out.count = Array.isArray(list) ? list.length : null;
-    out.list = Array.isArray(list) ? list.slice(0, 12) : list;
-    const last = Array.isArray(list) && list.length ? list[list.length - 1].id : null;
-    if (last) out.detail = await getJson(`${API}/cards/${encodeURIComponent(last)}`);
+    const { items } = await listExact(input);
+    out.exact = items.length;
+    const details = await Promise.all(items.slice(0, 12).map((c) => getJson(`${API}/cards/${encodeURIComponent(c.id)}`).catch(() => null)));
+    out.cards = details.filter(Boolean).map((d) => ({ id: d.id, name: d.name, set: d.set && d.set.name, rarity: d.rarity, cardmarket: d.pricing && d.pricing.cardmarket }));
   } catch (err) {
     out.error = err.message;
   }
