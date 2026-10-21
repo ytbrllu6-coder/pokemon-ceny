@@ -59,7 +59,7 @@ const server = http.createServer(async (req, res) => {
     const js = `// ==UserScript==
 // @name         PokéCeny: Smarty
 // @namespace    ${origin}
-// @version      1.3
+// @version      1.4
 // @description  Keď otvoríš PokéCeny, tvoj prehliadač si sám načíta ceny zo Smarty (najviac raz za 6 hodín).
 // @match        ${origin}/*
 // @connect      www.smarty.sk
@@ -74,7 +74,7 @@ const server = http.createServer(async (req, res) => {
   const box = document.createElement('div');
   box.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:99999;max-width:90vw;padding:8px 14px;border-radius:8px;font:600 13px system-ui,sans-serif;color:#fff;background:#37474f;display:none';
   document.addEventListener('DOMContentLoaded', () => document.body.appendChild(box));
-  const say = (t, bad) => { box.textContent = 'Smarty: ' + t; box.style.background = bad ? '#b3261e' : '#37474f'; box.style.display = 'block'; if (!box.parentNode && document.body) document.body.appendChild(box); console.log('[Smarty]', t); };
+  const say = (t, bad) => { console.log('[Smarty]', t); if (!bad) return; box.textContent = 'Smarty: ' + t; box.style.background = '#b3261e'; box.style.display = 'block'; if (!box.parentNode && document.body) document.body.appendChild(box); };
   const force = new URLSearchParams(location.search).get('smarty') === 'force';
   try {
     const old = JSON.parse(localStorage.getItem(KEY) || 'null');
