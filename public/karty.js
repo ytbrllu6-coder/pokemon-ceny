@@ -268,7 +268,7 @@
       if (np.total) params.set('total', np.total);
     }
     if (!name && !(np && np.total)) {
-      setStatus('Zadaj meno karty, alebo celé číslo (napr. 125/197).');
+      setStatus(np ? 'K číslu doplň aj meno karty, alebo napíš číslo aj s počtom kariet v sete (napr. 4/134).' : 'Zadaj meno karty a číslo (napr. 4).');
       return;
     }
 
