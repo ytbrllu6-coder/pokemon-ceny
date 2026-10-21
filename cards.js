@@ -24,14 +24,14 @@ function firstToken(name) {
 }
 
 // Postupne menej prísne dotazy: názov+číslo+počet kariet v sete, číslo+počet, názov+číslo, len názov
-// Skratky setov, ktoré používateľ píše pri reprintoch (30c = 30th Celebration Classic Collection, 25c = Celebrations Classic Collection)
-const SET_ALIASES = { '30c': 'me55c', '25c': 'cel25c' };
+// Skratky setov pri reprintoch: 30c = 30th Celebration (aj Classic Collection), 25c = Celebrations (CEL). Iné: kód setu (napr. OBF) alebo id (napr. sv3).
+const SET_ALIASES = { '30c': '30C', '25c': 'CEL' };
 
 function setClause(set) {
   const s = String(set || '').toLowerCase().replace(/[^a-z0-9.]/g, '').slice(0, 12);
   if (!s) return null;
-  const id = SET_ALIASES[s] || s;
-  return `(set.id:${id} OR set.ptcgoCode:${id.toUpperCase()})`;
+  if (SET_ALIASES[s]) return `set.ptcgoCode:${SET_ALIASES[s]}`;
+  return /^[a-z]{2,5}$/.test(s) ? `set.ptcgoCode:${s.toUpperCase()}` : `set.id:${s}`;
 }
 
 function buildQueries({ name, number, total, set }) {
