@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cena karty – PokéCeny</title>
+<meta name="description" content="Zisti cenu Pokémon karty podľa Cardmarketu: naskenuj ju kamerou alebo ju vyhľadaj podľa mena a čísla.">
+<style>
+  :root {
+    --paper: #eef1f6; --surface: #ffffff; --ink: #101a33; --muted: #5b6578; --line: #d9dfeb;
+    --action: #2b55e6; --action-ink: #ffffff; --tag: #ffc21a; --stock: #1b8a5a;
+    --shadow: 0 1px 0 rgba(16, 26, 51, .06), 0 8px 24px -12px rgba(16, 26, 51, .25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0c1224; --surface: #151d36; --ink: #eef1fa; --muted: #9aa6c2; --line: #263052;
+      --action: #6c8cff; --action-ink: #0c1224; --stock: #46d19a;
+      --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 10px 28px -14px rgba(0, 0, 0, .7);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 "Avenir Next", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; font-variant-numeric: tabular-nums; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--action); outline-offset: 2px; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+
+  header.top { background: var(--ink); color: #fff; }
+  header.top .wrap { display: flex; align-items: center; gap: 10px; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.15rem; letter-spacing: -.01em; text-decoration: none; color: #fff; }
+  .brand svg { width: 26px; height: 26px; }
+  .brand b { color: var(--tag); font-weight: 800; }
+  .nav { margin-left: auto; display: flex; gap: 4px; }
+  .nav a { color: #b8c2dc; text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: .95rem; }
+  .nav a:hover { color: #fff; }
+  .nav a[aria-current="page"] { background: rgba(255, 255, 255, .14); color: #fff; }
+
+  .hero { background: var(--ink); color: #fff; padding: 28px 0 36px; }
+  .hero h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 4.6vw, 2.5rem); line-height: 1.12; letter-spacing: -.025em; font-weight: 800; max-width: 18em; }
+  .hero p { margin: 0 0 22px; color: #b8c2dc; max-width: 36em; }
+  .cardform { display: grid; grid-template-columns: 1fr 170px auto; gap: 8px; background: var(--surface); border-radius: 10px; padding: 6px; box-shadow: 0 14px 30px -14px rgba(0,0,0,.6); }
+  .cardform input { min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 1.05rem; padding: 12px 14px; }
+  .cardform input + input { border-left: 1px solid var(--line); }
+  .cardform input:focus-visible { outline: none; }
+  .cardform:focus-within { outline: 3px solid var(--tag); outline-offset: 2px; }
+  .cardform button { border: 0; border-radius: 7px; padding: 0 26px; font: inherit; font-weight: 700; background: var(--action); color: var(--action-ink); cursor: pointer; }
+  .hint { margin: 10px 0 0; color: #b8c2dc; font-size: .9rem; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+  .scanbtn, .filebtn {
+    display: inline-flex; align-items: center; gap: 8px; padding: 11px 20px; border-radius: 99px; font: inherit; font-weight: 700; cursor: pointer;
+    border: 1.5px solid var(--tag); background: transparent; color: #fff;
+  }
+  .scanbtn { background: var(--tag); color: #3b2a00; }
+  .scanbtn:hover { filter: brightness(1.06); }
+  .filebtn:hover { background: rgba(255, 194, 26, .14); }
+  .scanbtn svg { width: 20px; height: 20px; }
+
+  main { padding: 26px 0 56px; }
+  .cam { display: none; margin-bottom: 22px; }
+  .cam.on { display: block; }
+  .stage { position: relative; background: #000; border-radius: 12px; overflow: hidden; max-width: 520px; margin: 0 auto; }
+  .stage video { display: block; width: 100%; height: auto; }
+  .guide { position: absolute; border: 3px solid var(--tag); border-radius: 10px; box-shadow: 0 0 0 999px rgba(0, 0, 0, .45); pointer-events: none; }
+  .camrow { display: flex; justify-content: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .go { border: 0; border-radius: 8px; padding: 11px 20px; font: inherit; font-weight: 700; background: var(--action); color: var(--action-ink); cursor: pointer; text-decoration: none; display: inline-block; }
+  .go.quiet { background: transparent; color: var(--action); border: 1px solid var(--line); }
+  #status { margin: 0 0 14px; color: var(--muted); text-align: center; }
+  #status:empty { display: none; }
+  .pct { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .95rem; margin-bottom: 16px; }
+  .pct input { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; width: 80px; }
+
+  .cands { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
+  .cand { flex: 0 0 auto; width: 84px; border: 2px solid transparent; border-radius: 8px; background: var(--surface); padding: 4px; font: inherit; font-size: .72rem; color: var(--muted); cursor: pointer; display: grid; gap: 2px; text-align: center; }
+  .cand img { width: 100%; border-radius: 4px; }
+  .cand.on { border-color: var(--action); color: var(--ink); }
+  .cardres { display: grid; grid-template-columns: 150px 1fr; gap: 6px 22px; background: var(--surface); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); }
+  .cardres > img, .cardres > .ph { grid-column: 1; grid-row: 1 / span 3; width: 150px; border-radius: 8px; min-height: 200px; background: var(--line); }
+  .cardinfo, .own, .avg { grid-column: 2; }
+  .cardinfo h3 { margin: 0 0 2px; font-size: 1.3rem; }
+  .cardinfo p { margin: 0; color: var(--muted); font-size: .92rem; }
+  .lbl { display: block; color: var(--muted); font-size: .88rem; }
+  .own .big { display: block; font-size: 2.8rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; color: var(--stock); }
+  .avg .mid { font-size: 1.4rem; font-weight: 800; }
+  .more { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 26px; margin: 8px 0 0; }
+  .more dt { font-size: .78rem; color: var(--muted); }
+  .more dd { margin: 0; font-weight: 700; }
+  .upd { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: .82rem; }
+  .cardres .go { grid-column: 1 / -1; justify-self: start; }
+  .skel { background: var(--surface); border-radius: 12px; height: 180px; }
+  .empty { text-align: center; color: var(--muted); padding: 30px 0; }
+  @media (max-width: 680px) {
+    .cardform { grid-template-columns: 1fr; }
+    .cardform input + input { border-left: 0; border-top: 1px solid var(--line); }
+    .cardform button { padding: 13px; }
+    .scanbtn, .filebtn { flex: 1 1 100%; justify-content: center; }
+    .cardres { grid-template-columns: 104px 1fr; padding: 14px; }
+    .cardres > img, .cardres > .ph { width: 104px; min-height: 140px; }
+    .own .big { font-size: 2.2rem; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="PokéCeny, domov">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h13.5L28 14.5 17.5 28 4 14.5z" fill="#ffc21a"/><circle cx="11" cy="11" r="2.6" fill="#101a33"/></svg>
+      <span>Poké<b>Ceny</b></span>
+    </a>
+    <nav class="nav" aria-label="Sekcie">
+      <a href="/">Produkty</a>
+      <a href="/karty.html" aria-current="page">Karty</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Cena Pokémon karty podľa Cardmarketu</h1>
+    <p>Naskenuj kartu kamerou a appka ju rozpozná sama, alebo ju vyhľadaj podľa mena a čísla.</p>
+    <form id="cardForm" class="cardform">
+      <label for="cName" hidden>Meno karty</label>
+      <input id="cName" type="text" placeholder="Meno, napr. Charizard ex" autocomplete="off">
+      <label for="cNum" hidden>Číslo karty</label>
+      <input id="cNum" type="text" inputmode="numeric" placeholder="Číslo, napr. 125/197" autocomplete="off">
+      <button type="submit">Hľadať</button>
+    </form>
+    <p class="hint">Stačí samotné meno, alebo celé číslo karty (napr. 125/197). Číslo nájdeš vľavo dole na karte.</p>
+    <div class="actions">
+      <button type="button" class="scanbtn" id="camBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+        Skenovať kamerou
+      </button>
+      <label class="filebtn">Nahrať fotku<input id="shotPick" type="file" accept="image/*" hidden></label>
+    </div>
+  </div>
+</section>
+
+<main>
+  <div class="wrap">
+    <section class="cam" id="cam" aria-label="Kamera">
+      <div class="stage" id="stage">
+        <video id="video" playsinline muted></video>
+        <div class="guide" id="guide"></div>
+      </div>
+      <div class="camrow">
+        <button type="button" class="go" id="snap">Odfotiť teraz</button>
+        <button type="button" class="go quiet" id="camStop">Zavrieť kameru</button>
+      </div>
+    </section>
+    <p id="status" role="status" aria-live="polite"></p>
+    <label class="pct">Moja cena v % z priemeru <input id="cPct" type="number" min="1" max="200" step="1" value="90"> %</label>
+    <div id="out"></div>
+  </div>
+</main>
+
+<script src="/cardparse.js"></script>
+<script src="/karty.js"></script>
+</body>
+</html>
