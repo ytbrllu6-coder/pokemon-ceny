@@ -6,6 +6,7 @@ const { SHOPS, parseShopify, parseWoo, decodeEntities } = require('./shops');
 const { parseListing } = require('./listing');
 const { buildQueries, normCard } = require('./cards');
 const ext = require('./external');
+const { normTcgdex } = require('./tcgdex');
 const CP = require('./public/cardparse');
 const { searchAll, normalize, expandQuery, correctQuery, matches, detect } = require('./search');
 
@@ -174,6 +175,18 @@ const wooFixture = [
     assert.strictEqual(c.setTotal, 198);
     assert.strictEqual(c.reverseAvg30, 2.5);
     assert.strictEqual(normCard({ id: 'x', name: 'Bez ceny' }).avg30, null);
+  });
+
+  await test('tcgdex: normalizácia ceny z Cardmarketu', () => {
+    const c = normTcgdex({ id: 'me02-125', localId: '125', name: 'Charizard ex', rarity: 'Ultra Rare', image: 'https://assets.tcgdex.net/en/me/me02/125',
+      set: { id: 'me02', name: 'Phantasmal Flames', cardCount: { official: 94 } },
+      pricing: { cardmarket: { updated: '2026-10-20T10:00:00.000Z', unit: 'EUR', avg30: 12.5, avg7: 11, avg1: 0, trend: 13, low: 9, 'avg30-holo': 20 } } });
+    assert.strictEqual(c.avg30, 12.5);
+    assert.strictEqual(c.avg1, null);
+    assert.strictEqual(c.reverseAvg30, 20);
+    assert.strictEqual(c.updated, '2026-10-20');
+    assert.strictEqual(c.setTotal, 94);
+    assert.strictEqual(normTcgdex({ id: 'x', localId: '1', name: 'A' }).avg30, null);
   });
 
   await test('sken: čítanie čísla a názvu karty z textu', () => {

@@ -6,6 +6,7 @@ const path = require('path');
 const { searchAll, featured, related, warmUp } = require('./search');
 const { SHOPS } = require('./shops');
 const { findCards, buildQueries } = require('./cards');
+const { findTcgdex } = require('./tcgdex');
 const { parseListing } = require('./listing');
 const external = require('./external');
 
@@ -161,7 +162,26 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 400, { error: 'Zadaj názov karty alebo celé číslo (napr. 123/191).' });
     }
     try {
-      return sendJson(res, 200, await findCards(input));
+      const found = await findCards(input).catch((err) => {
+        console.error(err);
+        return { cards: [], query: null, failed: true };
+      });
+      // karty bez ceny doplníme zo záložného zdroja (ceny z Cardmarketu aj pre novšie sety)
+      if (input.number && (found.failed || found.cards.some((c) => !c.avg30))) {
+        const extra = await findTcgdex(input).catch((err) => {
+          console.error('tcgdex', err.message);
+          return [];
+        });
+        const priced = extra.filter((c) => c.avg30);
+        const have = new Set(found.cards.filter((c) => c.avg30).map((c) => `${(c.setName || '').toLowerCase()}|${c.number}`));
+        const added = priced.filter((c) => !have.has(`${(c.setName || '').toLowerCase()}|${c.number}`));
+        const unpriced = found.cards.filter((c) => !c.avg30 && !priced.some((p) => (p.setName || '').toLowerCase() === (c.setName || '').toLowerCase() && p.number === c.number));
+        found.cards = [...found.cards.filter((c) => c.avg30), ...added, ...unpriced];
+        delete found.failed;
+      } else if (found.failed) {
+        throw new Error('zdroj nedostupný');
+      }
+      return sendJson(res, 200, found);
     } catch (err) {
       console.error(err);
       return sendJson(res, 502, { error: 'Ceny z Cardmarketu sa teraz nepodarilo načítať, skús to o chvíľu.' });
