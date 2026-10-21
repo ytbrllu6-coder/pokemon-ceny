@@ -80,7 +80,7 @@ function normCard(c) {
   };
 }
 
-async function fetchCards(q) {
+async function fetchCardsOnce(q) {
   const hit = cache.get(q);
   if (hit && Date.now() - hit.t < CACHE_TTL_MS) return hit.cards;
 
@@ -101,6 +101,16 @@ async function fetchCards(q) {
     return cards;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+// pokemontcg.io občas vráti chybu 5xx alebo vyprší čas, preto jedna opakovaná požiadavka
+async function fetchCards(q) {
+  try {
+    return await fetchCardsOnce(q);
+  } catch (err) {
+    await new Promise((r) => setTimeout(r, 1500));
+    return fetchCardsOnce(q);
   }
 }
 

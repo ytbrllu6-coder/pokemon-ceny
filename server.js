@@ -191,7 +191,7 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 200, found);
     } catch (err) {
       console.error(err);
-      return sendJson(res, 502, { error: 'Ceny z Cardmarketu sa teraz nepodarilo načítať, skús to o chvíľu.' });
+      return sendJson(res, 502, { error: 'Zdroj cien (pokemontcg.io) práve neodpovedá. Skús to o chvíľu znova, alebo zadaj 30-dňový priemer ručne z Cardmarketu.' });
     }
   }
 
