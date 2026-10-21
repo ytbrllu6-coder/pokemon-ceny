@@ -38,12 +38,13 @@
   .hero { background: var(--ink); color: #fff; padding: 28px 0 36px; }
   .hero h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 4.6vw, 2.5rem); line-height: 1.12; letter-spacing: -.025em; font-weight: 800; max-width: 18em; }
   .hero p { margin: 0 0 22px; color: #b8c2dc; max-width: 36em; }
-  .cardform { display: grid; grid-template-columns: 1fr 170px auto; gap: 8px; background: var(--surface); border-radius: 10px; padding: 6px; box-shadow: 0 14px 30px -14px rgba(0,0,0,.6); }
-  .cardform input { min-width: 0; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 1.05rem; padding: 12px 14px; }
-  .cardform input + input { border-left: 1px solid var(--line); }
-  .cardform input:focus-visible { outline: none; }
-  .cardform:focus-within { outline: 3px solid var(--tag); outline-offset: 2px; }
-  .cardform button { border: 0; border-radius: 7px; padding: 0 26px; font: inherit; font-weight: 700; background: var(--action); color: var(--action-ink); cursor: pointer; }
+  .cardform { display: grid; grid-template-columns: 1fr 190px auto; gap: 12px; }
+  .cardform input {
+    min-width: 0; border: 0; background: var(--surface); color: var(--ink); font: inherit; font-size: 1.05rem;
+    padding: 14px 16px; border-radius: 10px; box-shadow: 0 14px 30px -14px rgba(0,0,0,.6);
+  }
+  .cardform input:focus-visible { outline: 3px solid var(--tag); outline-offset: 2px; }
+  .cardform button { border: 0; border-radius: 10px; padding: 0 28px; font: inherit; font-weight: 700; background: var(--action); color: var(--action-ink); cursor: pointer; }
   .hint { margin: 10px 0 0; color: #b8c2dc; font-size: .9rem; }
   .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
   .scanbtn, .filebtn {
@@ -90,7 +91,6 @@
   .empty { text-align: center; color: var(--muted); padding: 30px 0; }
   @media (max-width: 680px) {
     .cardform { grid-template-columns: 1fr; }
-    .cardform input + input { border-left: 0; border-top: 1px solid var(--line); }
     .cardform button { padding: 13px; }
     .scanbtn, .filebtn { flex: 1 1 100%; justify-content: center; }
     .cardres { grid-template-columns: 104px 1fr; padding: 14px; }
