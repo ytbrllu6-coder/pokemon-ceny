@@ -1,6 +1,7 @@
 'use strict';
 
 const { SHOPS } = require('./shops');
+const external = require('./external');
 
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minút
 const SHOP_TIMEOUT_MS = 9000;
@@ -200,6 +201,15 @@ async function searchAll(rawQuery, { pokemonOnly = true } = {}) {
       cached: r.cached,
       ms: r.ms,
     });
+  }
+
+  // ponuky nahrané majiteľom (napr. Smarty)
+  for (const id of external.ids()) {
+    const ext = external.get(id);
+    if (!ext) continue;
+    const found = ext.items.filter((item) => matches(item.title, tokens));
+    for (const item of found) results.push({ ...item, shopId: id, shopName: external.name(id) });
+    shops.push({ id, name: `${external.name(id)} (stav z ${new Date(ext.at).toLocaleDateString('sk-SK')})`, url: '', ok: true, loading: false, error: null, count: found.length, cached: true, ms: 0 });
   }
 
   // skladom najprv, v rámci toho od najlacnejšieho

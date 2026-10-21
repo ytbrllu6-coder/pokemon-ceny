@@ -5,6 +5,7 @@ const assert = require('assert');
 const { SHOPS, parseShopify, parseWoo, decodeEntities } = require('./shops');
 const { parseListing } = require('./listing');
 const { buildQueries, normCard } = require('./cards');
+const ext = require('./external');
 const CP = require('./public/cardparse');
 const { searchAll, normalize, expandQuery, correctQuery, matches, detect } = require('./search');
 
@@ -183,6 +184,20 @@ const wooFixture = [
     assert.strictEqual(CP.parseName('Evolves from Charmeleon\nSTAGE 2 Charizard HP 150'), 'Charizard');
     assert.strictEqual(CP.parseName('12 34'), null);
     assert.strictEqual(CP.bestIndex([{ name: 'Charmander' }, { name: 'Charizard ex' }], 'Charzard'), 1);
+  });
+
+  await test('externé ponuky: kontrola tvaru a hesla', () => {
+    const ok = { title: 'Pokémon ETB', price: 70, url: 'https://www.smarty.sk/x-1p1', image: 'http://x', inStock: 1 };
+    const cleaned = ext.clean('smarty', [ok, { ...ok, url: 'https://evil.com/x' }, { ...ok, price: 0 }, { ...ok, title: 'x'.repeat(300) }, null]);
+    assert.strictEqual(cleaned.length, 1);
+    assert.strictEqual(cleaned[0].image, null);
+    assert.strictEqual(ext.clean('neznamy', [ok]).length, 0);
+    delete process.env.SMARTY_TOKEN;
+    assert.strictEqual(ext.tokenOk('abc'), false);
+    process.env.SMARTY_TOKEN = 'tajne';
+    assert.strictEqual(ext.tokenOk('tajne'), true);
+    assert.strictEqual(ext.tokenOk('zle'), false);
+    delete process.env.SMARTY_TOKEN;
   });
 
   await test('parseListing: prázdna stránka nevráti nič', () => {

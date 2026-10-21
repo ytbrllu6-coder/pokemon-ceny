@@ -6,3 +6,6 @@ services:
     buildCommand: echo "bez buildu"
     startCommand: node server.js
     healthCheckPath: /api/shops
+    envVars:
+      - key: SMARTY_TOKEN
+        generateValue: true

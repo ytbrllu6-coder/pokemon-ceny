@@ -7,6 +7,7 @@ const { searchAll, featured, related, warmUp } = require('./search');
 const { SHOPS } = require('./shops');
 const { findCards, buildQueries } = require('./cards');
 const { parseListing } = require('./listing');
+const external = require('./external');
 
 const LISTING_SHOPS = { smarty: { base: 'https://www.smarty.sk', linkRe: /-\d+p\d+$/ } };
 
@@ -58,7 +59,7 @@ const server = http.createServer(async (req, res) => {
     const js = `// ==UserScript==
 // @name         PokéCeny: Smarty
 // @namespace    ${origin}
-// @version      1.2
+// @version      1.3
 // @description  Keď otvoríš PokéCeny, tvoj prehliadač si sám načíta ceny zo Smarty (najviac raz za 6 hodín).
 // @match        ${origin}/*
 // @connect      www.smarty.sk
@@ -98,13 +99,38 @@ const server = http.createServer(async (req, res) => {
   }
   if (!items.size) { say('nenašli sa žiadne produkty s cenou', true); return; }
   localStorage.setItem(KEY, JSON.stringify({ at: Date.now(), items: [...items.values()] }));
-  say('hotovo, uložených ' + items.size + ' produktov');
+  let msg = 'hotovo, uložených ' + items.size + ' produktov u teba';
+  try {
+    let tok = localStorage.getItem('pokeceny.token');
+    if (!tok) { tok = prompt('PokéCeny: zadaj heslo majiteľa (SMARTY_TOKEN z Renderu), aby sa Smarty zobrazilo aj ostatným. Zruš = len u mňa.'); if (tok) localStorage.setItem('pokeceny.token', tok.trim()); }
+    if (tok) {
+      const up = await fetch('/api/external-upload', { method: 'POST', headers: { 'X-Token': tok.trim(), 'Content-Type': 'application/json' }, body: JSON.stringify({ shop: 'smarty', items: [...items.values()] }) });
+      if (up.ok) msg += ', nahrané aj na server pre všetkých';
+      else { if (up.status === 401) localStorage.removeItem('pokeceny.token'); say('hotovo, ale nahratie na server zlyhalo (' + up.status + ')', true); return; }
+    }
+  } catch (e) {}
+  say(msg);
   const q = new URLSearchParams(location.search).get('q');
   if (q && typeof search === 'function') search(q);
 })();
 `;
     res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
     return res.end(js);
+  }
+
+  // Nahratie ponúk majiteľom (chránené heslom SMARTY_TOKEN)
+  if (url.pathname === '/api/external-upload' && req.method === 'POST') {
+    if (!process.env.SMARTY_TOKEN) return sendJson(res, 503, { error: 'Na serveri nie je nastavené SMARTY_TOKEN.' });
+    if (!external.tokenOk(req.headers['x-token'])) return sendJson(res, 401, { error: 'Nesprávne heslo.' });
+    let body = '';
+    for await (const chunk of req) {
+      body += chunk;
+      if (body.length > 8_000_000) return sendJson(res, 413, { error: 'Príliš veľké.' });
+    }
+    let data;
+    try { data = JSON.parse(body); } catch { return sendJson(res, 400, { error: 'Neplatný JSON.' }); }
+    const n = external.set(String(data.shop), data.items);
+    return n ? sendJson(res, 200, { saved: n }) : sendJson(res, 400, { error: 'Nič platné na uloženie.' });
   }
 
   // Spracovanie HTML výpisu, ktorý poslal prehliadač používateľa (nič sa neukladá)
