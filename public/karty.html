@@ -38,7 +38,7 @@
   .hero { background: var(--ink); color: #fff; padding: 28px 0 36px; }
   .hero h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 4.6vw, 2.5rem); line-height: 1.12; letter-spacing: -.025em; font-weight: 800; max-width: 18em; }
   .hero p { margin: 0 0 22px; color: #b8c2dc; max-width: 36em; }
-  .cardform { display: grid; grid-template-columns: 1fr 190px auto; gap: 12px; }
+  .cardform { display: grid; grid-template-columns: 1fr 170px 150px auto; gap: 12px; }
   .cardform input {
     min-width: 0; border: 0; background: var(--surface); color: var(--ink); font: inherit; font-size: 1.05rem;
     padding: 14px 16px; border-radius: 10px; box-shadow: 0 14px 30px -14px rgba(0,0,0,.6);
@@ -122,9 +122,11 @@
       <input id="cName" type="text" placeholder="Meno, napr. Charizard ex" autocomplete="off">
       <label for="cNum" hidden>Číslo karty</label>
       <input id="cNum" type="text" inputmode="numeric" placeholder="Číslo, napr. 4" autocomplete="off">
+      <label for="cSet" hidden>Set (pri reprintoch)</label>
+      <input id="cSet" type="text" placeholder="Set, napr. 30c" autocomplete="off" autocapitalize="off">
       <button type="submit">Hľadať</button>
     </form>
-    <p class="hint">Stačí meno a číslo karty bez toho, koľko kariet má set (napr. 4). Číslo nájdeš vľavo dole na karte. Samotné meno ukáže viac kariet na výber.</p>
+    <p class="hint">Stačí meno a číslo karty bez toho, koľko kariet má set (napr. 4). Číslo nájdeš vľavo dole na karte. Pri reprintoch napíš do poľa Set skratku: 30c (30th Celebration) alebo 25c (Celebrations). Samotné meno ukáže viac kariet na výber.</p>
     <div class="actions">
       <button type="button" class="scanbtn" id="camBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>

@@ -24,7 +24,17 @@ function firstToken(name) {
 }
 
 // Postupne menej prísne dotazy: názov+číslo+počet kariet v sete, číslo+počet, názov+číslo, len názov
-function buildQueries({ name, number, total }) {
+// Skratky setov, ktoré používateľ píše pri reprintoch (30c = 30th Celebration Classic Collection, 25c = Celebrations Classic Collection)
+const SET_ALIASES = { '30c': 'me55c', '25c': 'cel25c' };
+
+function setClause(set) {
+  const s = String(set || '').toLowerCase().replace(/[^a-z0-9.]/g, '').slice(0, 12);
+  if (!s) return null;
+  const id = SET_ALIASES[s] || s;
+  return `(set.id:${id} OR set.ptcgoCode:${id.toUpperCase()})`;
+}
+
+function buildQueries({ name, number, total, set }) {
   const num = number != null && /^\d{1,3}$/.test(String(number)) && Number(number) > 0 ? String(Number(number)) : null;
   const tot = total != null && /^\d{2,3}$/.test(String(total)) && Number(total) > 0 ? String(Number(total)) : null;
   const tok = firstToken(name);
@@ -34,6 +44,15 @@ function buildQueries({ name, number, total }) {
   if (num && tot) qs.push(`number:${num} set.printedTotal:${tot}`);
   if (nameQ && num) qs.push(`${nameQ} number:${num}`);
   if (nameQ) qs.push(nameQ);
+  const sc = setClause(set);
+  if (sc) {
+    // pri zadanom sete netreba počet kariet v sete, stačí meno a/alebo číslo
+    const withSet = [];
+    if (nameQ && num) withSet.push(`${nameQ} number:${num} ${sc}`);
+    if (num) withSet.push(`number:${num} ${sc}`);
+    if (nameQ) withSet.push(`${nameQ} ${sc}`);
+    return [...new Set(withSet)];
+  }
   return [...new Set(qs)];
 }
 

@@ -164,6 +164,7 @@ const server = http.createServer(async (req, res) => {
       name: (url.searchParams.get('name') || '').trim().slice(0, 60),
       number: (url.searchParams.get('number') || '').trim().slice(0, 6),
       total: (url.searchParams.get('total') || '').trim().slice(0, 4),
+      set: (url.searchParams.get('set') || '').trim().slice(0, 12),
     };
     if (!buildQueries(input).length) {
       return sendJson(res, 400, { error: 'Zadaj názov karty alebo celé číslo (napr. 123/191).' });
@@ -174,7 +175,7 @@ const server = http.createServer(async (req, res) => {
         return { cards: [], query: null, failed: true };
       });
       // čerstvé ceny z TCGdex (obnovuje sa denne) majú prednosť, pokemontcg.io ich má často zastarané alebo prázdne
-      if (input.number) {
+      if (input.number && !input.set) {
         const extra = await findTcgdex(input).catch((err) => {
           console.error('tcgdex', err.message);
           return [];

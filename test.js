@@ -162,6 +162,15 @@ const wooFixture = [
     assert.deepStrictEqual(buildQueries({}), []);
   });
 
+  await test('karty: skratka setu pri reprintoch', () => {
+    assert.deepStrictEqual(buildQueries({ name: 'Charizard', number: '4', set: '30c' }), [
+      'name:charizard* number:4 (set.id:me55c OR set.ptcgoCode:ME55C)',
+      'number:4 (set.id:me55c OR set.ptcgoCode:ME55C)',
+      'name:charizard* (set.id:me55c OR set.ptcgoCode:ME55C)',
+    ]);
+    assert.ok(buildQueries({ name: 'Charizard', set: '25C' })[0].includes('cel25c'));
+  });
+
   await test('karty: normalizácia cien z Cardmarketu', () => {
     const c = normCard({
       id: 'sv1-1', name: 'Pikachu', number: '1', rarity: 'Common',
