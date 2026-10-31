@@ -14,7 +14,7 @@ const cache = new Map();
 
 async function getJsonOnce(url) {
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 25000);
+  const timer = setTimeout(() => ctrl.abort(), 20000);
   const headers = { Accept: 'application/json', 'User-Agent': 'PokemonCeny/1.0 (osobne-pouzitie)' };
   if (url.startsWith(PTCG) && process.env.POKEMONTCG_API_KEY) headers['X-Api-Key'] = process.env.POKEMONTCG_API_KEY;
   try {
@@ -76,23 +76,33 @@ async function listSets() {
   return { source: 'tcgdex', sets: (Array.isArray(list) ? list : []).map(normSetDex).reverse() };
 }
 
+const flat = (t) => String(t || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '');
+
+async function dexCards(dexId) {
+  const d = await getJson(`${TCGDEX}/sets/${encodeURIComponent(dexId)}`);
+  return (d.cards || []).map((c) => ({
+    id: 'tcgdex:' + c.id, name: c.name, number: String(c.localId ?? ''), rarity: null,
+    image: c.image ? `${c.image}/low.webp` : null, avg30: null, trend: null, updated: null, cmUrl: null,
+  }));
+}
+
 async function setCards(id) {
   const { sets } = await listSets();
   const set = sets.find((s) => s.id === id) || { id, name: id, series: '', total: null, date: null, logo: null, symbol: null, code: null };
-  if (id.startsWith('tcgdex:')) {
-    const d = await getJson(`${TCGDEX}/sets/${encodeURIComponent(id.slice(7))}`);
-    const cards = (d.cards || []).map((c) => ({
-      id: 'tcgdex:' + c.id, name: c.name, number: String(c.localId ?? ''), rarity: null,
-      image: c.image ? `${c.image}/low.webp` : null, avg30: null, trend: null, updated: null, cmUrl: null,
-    }));
-    return { set, cards, source: 'tcgdex' };
-  }
-  const json = await getJson(`${PTCG}/cards?q=${encodeURIComponent('set.id:' + id)}&pageSize=250&select=id,name,number,rarity,set,cardmarket,images`);
-  const cards = (json.data || []).map((c) => {
-    const n = normCard(c);
-    return { id: n.id, name: n.name, number: n.number, rarity: n.rarity, image: n.image, avg30: n.avg30, trend: n.trend, updated: n.updated, cmUrl: n.cmUrl };
-  });
-  return { set, cards, source: 'pokemontcg' };
+  if (id.startsWith('tcgdex:')) return { set, cards: await dexCards(id.slice(7)), source: 'tcgdex' };
+  try {
+    const json = await getJson(`${PTCG}/cards?q=${encodeURIComponent('set.id:' + id)}&pageSize=250&select=id,name,number,rarity,set,cardmarket,images`);
+    const cards = (json.data || []).map((c) => {
+      const n = normCard(c);
+      return { id: n.id, name: n.name, number: n.number, rarity: n.rarity, image: n.image, avg30: n.avg30, trend: n.trend, updated: n.updated, cmUrl: n.cmUrl };
+    });
+    if (cards.length) return { set, cards, source: 'pokemontcg' };
+  } catch { /* skúsime zálohu */ }
+  // záloha: set s rovnakým názvom v TCGdex (karty bez cien)
+  const dex = await getJson(`${TCGDEX}/sets`);
+  const match = (Array.isArray(dex) ? dex : []).find((d) => flat(d.name) === flat(set.name));
+  if (!match) throw new Error('set sa nenašiel v zálohe');
+  return { set, cards: await dexCards(match.id), source: 'tcgdex' };
 }
 
 module.exports = { listSets, setCards };
