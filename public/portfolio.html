@@ -202,23 +202,52 @@ async function refreshOne(i) {
   return true;
 }
 
+const setOf = (i) => { const m = /^card:(.+)-[^-]+$/.exec(i.key || ''); return m ? m[1] : null; };
+
 async function refreshAll(onlyMissing) {
   $('refresh').disabled = true;
-  const list = items.filter((i) => !onlyMissing || i.price == null);
-  let ok = 0, fail = 0;
-  for (const [k, i] of list.entries()) {
-    $('msg').textContent = `Obnovujem ${k + 1} z ${list.length}…`;
+  const targets = items.filter((i) => !onlyMissing || i.price == null);
+  const bySet = new Map();
+  const rest = [];
+  for (const i of targets) {
+    const sid = i.kind === 'card' ? setOf(i) : null;
+    if (sid) { if (!bySet.has(sid)) bySet.set(sid, []); bySet.get(sid).push(i); } else rest.push(i);
+  }
+  const steps = bySet.size + rest.length;
+  let step = 0, ok = 0, fail = 0;
+  // karty: jedna požiadavka na celý set
+  for (const [sid, list] of bySet) {
+    $('msg').textContent = `Načítavam set ${++step} z ${steps}… (môže to trvať aj pol minúty)`;
+    let cards = [];
+    try {
+      const res = await fetch('/api/set-cards?id=' + encodeURIComponent(sid));
+      cards = (await res.json()).cards || [];
+    } catch { /* ostane bez ceny */ }
+    const byId = new Map(cards.map((c) => [c.id, c]));
+    for (const i of list) {
+      const c = byId.get(i.key.slice(5));
+      if (c && c.avg30) { i.price = c.avg30; ok++; } else fail++;
+    }
+    Portfolio.save(items);
+    render();
+  }
+  // produkty a karty, ktoré nemajú set: jednotlivo
+  for (const i of rest) {
+    $('msg').textContent = `Obnovujem ${++step} z ${steps}…`;
     try { (await refreshOne(i)) ? ok++ : fail++; } catch { fail++; }
     Portfolio.save(items);
     render();
   }
-  $('msg').textContent = !list.length ? '' : fail ? `Obnovené: ${ok}. Pri ${fail} položkách sa cena nenašla, zadaj ju ručne do poľa Cena.` : `Ceny obnovené (${ok}).`;
+  try { localStorage.setItem('pokeceny.pfTried', String(Date.now())); } catch {}
+  $('msg').textContent = !targets.length ? '' : fail ? `Obnovené: ${ok}. Pri ${fail} položkách sa cena v databázach nenašla (napr. nové reprinty). Zadaj ju ručne do poľa Cena.` : `Ceny obnovené (${ok}).`;
   $('refresh').disabled = false;
 }
 $('refresh').addEventListener('click', () => refreshAll(false));
 
 render();
-if (items.some((i) => i.price == null)) refreshAll(true);
+let tried = 0;
+try { tried = Number(localStorage.getItem('pokeceny.pfTried')) || 0; } catch {}
+if (items.some((i) => i.price == null) && Date.now() - tried > 6 * 3600 * 1000) refreshAll(true);
 </script>
 </body>
 </html>
