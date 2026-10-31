@@ -129,12 +129,12 @@
         : num(a.number) - num(b.number) || String(a.number).localeCompare(String(b.number)));
       $('grid').innerHTML = list.length ? list.map((c) => {
         const link = `/karty.html?name=${encodeURIComponent(c.name)}&number=${encodeURIComponent(num(c.number) || c.number)}&set=id.${encodeURIComponent(String(state.cur.id).replace(/^tcgdex:/, ''))}`;
-        return `<a class="card" href="${link}">
+        return `<div class="card"><a href="${link}">
           ${c.image ? `<img src="${esc(c.image)}" alt="${esc(c.name)}" loading="lazy" referrerpolicy="no-referrer">` : '<div class="ph"></div>'}
           <b>${esc(c.name)}</b>
           <small>#${esc(c.number)}${c.rarity ? ' · ' + esc(c.rarity) : ''}</small>
           <span class="pr">${c.avg30 ? eur.format(c.avg30) : '<small>bez ceny</small>'}</span>
-        </a>`;
+        </a><button type="button" class="add" data-card="${esc(c.id)}">+ Portfólio</button></div>`;
       }).join('') : '<p class="empty">Žiadna karta sa nenašla.</p>';
     };
     $('cf').addEventListener('input', draw);
@@ -155,7 +155,7 @@
           ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<div class="ph"></div>'}
           <div><h4><a class="title" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc(r.title)}</a></h4>
           <small>${esc(r.shopName)} · ${r.inStock ? 'Skladom' : 'Nie je skladom'}</small></div>
-          <div class="price">${eur.format(r.price)}</div>
+          <div class="price">${eur.format(r.price)}<button type="button" class="add" data-prod="${esc(r.url)}">+ Portfólio</button></div>
         </div>`).join('') : '<p class="empty">V obchodoch sme k tomuto setu nenašli žiadne produkty.</p>';
     } catch (err) {
       if ($('prods')) $('prods').innerHTML = `<p class="empty">${esc(err.message)}</p>`;
@@ -168,6 +168,18 @@
     if (id) openSet(id);
     else closeSet();
   }
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.add');
+    if (!b || !window.Portfolio) return;
+    if (b.dataset.card != null) {
+      const c = state.cards.cards.find((x) => x.id === b.dataset.card);
+      if (!c) return;
+      window.Portfolio.add({ key: 'card:' + c.id, kind: 'card', name: c.name, sub: `${state.cur.name} #${c.number}`, image: c.image, url: c.cmUrl || null, price: c.avg30 || null, ref: { name: c.name, number: num(c.number) || c.number } });
+    } else if (b.dataset.prod != null && state.products) {
+      const r = state.products.results.find((x) => x.url === b.dataset.prod);
+      if (r) window.Portfolio.add({ key: r.url, kind: 'product', name: r.title, sub: r.shopName, image: r.image || null, url: r.url, price: r.price, ref: { q: r.title } });
+    }
+  });
   $('find').addEventListener('input', renderList);
   window.addEventListener('hashchange', route);
   if (location.hash.length > 1) route();
