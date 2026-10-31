@@ -379,6 +379,7 @@
   if (q.get('name') || q.get('number')) {
     $('cName').value = q.get('name') || '';
     $('cNum').value = q.get('number') || '';
+    $('cSet').value = q.get('set') || '';
     lookup();
   }
 })();

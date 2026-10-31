@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sety – PokéCeny</title>
+<meta name="description" content="Všetky Pokémon sety: karty s cenami z Cardmarketu a produkty v slovenských obchodoch.">
+<style>
+  :root {
+    --paper: #eef1f6; --surface: #ffffff; --ink: #101a33; --muted: #5b6578; --line: #d9dfeb;
+    --action: #2b55e6; --action-ink: #ffffff; --tag: #ffc21a; --stock: #1b8a5a;
+    --shadow: 0 1px 0 rgba(16, 26, 51, .06), 0 8px 24px -12px rgba(16, 26, 51, .25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0c1224; --surface: #151d36; --ink: #eef1fa; --muted: #9aa6c2; --line: #263052;
+      --action: #6c8cff; --action-ink: #0c1224; --stock: #46d19a;
+      --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 10px 28px -14px rgba(0, 0, 0, .7);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 "Avenir Next", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; font-variant-numeric: tabular-nums; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--action); outline-offset: 2px; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+
+  header.top { background: var(--ink); color: #fff; }
+  header.top .wrap { display: flex; align-items: center; gap: 10px; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.15rem; letter-spacing: -.01em; text-decoration: none; color: #fff; }
+  .brand svg { width: 26px; height: 26px; }
+  .brand b { color: var(--tag); font-weight: 800; }
+  .nav { margin-left: auto; display: flex; gap: 4px; }
+  .nav a { color: #b8c2dc; text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: .95rem; }
+  .nav a:hover { color: #fff; }
+  .nav a[aria-current="page"] { background: rgba(255, 255, 255, .14); color: #fff; }
+
+  .hero { background: var(--ink); color: #fff; padding: 26px 0 30px; }
+  .hero h1 { margin: 0 0 8px; font-size: clamp(1.7rem, 4.6vw, 2.5rem); line-height: 1.12; letter-spacing: -.025em; font-weight: 800; }
+  .hero p { margin: 0 0 18px; color: #b8c2dc; max-width: 36em; }
+  .find { width: 100%; border: 0; background: var(--surface); color: var(--ink); font: inherit; font-size: 1.05rem; padding: 14px 16px; border-radius: 10px; box-shadow: 0 14px 30px -14px rgba(0,0,0,.6); }
+  .find:focus-visible { outline: 3px solid var(--tag); outline-offset: 2px; }
+  main { padding: 24px 0 56px; }
+  h2.series { margin: 26px 0 10px; font-size: 1.05rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .set { display: grid; gap: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; text-decoration: none; color: inherit; box-shadow: var(--shadow); align-content: start; }
+  .set:hover { border-color: var(--action); }
+  .set .logo { height: 56px; display: flex; align-items: center; justify-content: center; }
+  .set .logo img { max-width: 100%; max-height: 56px; object-fit: contain; }
+  .set b { font-size: .98rem; line-height: 1.25; }
+  .set small { color: var(--muted); }
+  .back { display: inline-block; margin-bottom: 12px; color: var(--action); font-weight: 700; text-decoration: none; }
+  .sethead { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
+  .sethead img { height: 64px; max-width: 200px; object-fit: contain; }
+  .sethead h2 { margin: 0; font-size: 1.5rem; }
+  .sethead p { margin: 0; color: var(--muted); }
+  .tabs { display: flex; gap: 6px; margin: 14px 0; border-bottom: 1px solid var(--line); }
+  .tabs button { border: 0; background: none; color: var(--muted); font: inherit; font-weight: 700; padding: 10px 16px; cursor: pointer; border-bottom: 3px solid transparent; }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--action); }
+  .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .tools input, .tools select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; }
+  .tools input { flex: 1; min-width: 160px; }
+  .note { color: var(--muted); font-size: .88rem; margin: 0 0 12px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .card { display: grid; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px; text-decoration: none; color: inherit; align-content: start; }
+  .card:hover { border-color: var(--action); }
+  .card img, .card .ph { width: 100%; aspect-ratio: 5 / 7; object-fit: contain; border-radius: 6px; background: var(--line); }
+  .card b { font-size: .88rem; line-height: 1.25; }
+  .card small { color: var(--muted); font-size: .78rem; }
+  .card .pr { font-weight: 800; color: var(--stock); }
+  .prod { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+  .prod img, .prod .ph { width: 64px; height: 64px; object-fit: contain; background: #fff; border-radius: 6px; }
+  .prod h4 { margin: 0 0 2px; font-size: 1rem; font-weight: 600; line-height: 1.35; }
+  .prod small { color: var(--muted); }
+  .prod .price { font-size: 1.2rem; font-weight: 800; text-align: right; white-space: nowrap; }
+  .prod.out { opacity: .6; }
+  .prod a.title { text-decoration: none; }
+  .empty { text-align: center; color: var(--muted); padding: 30px 0; }
+  .skel { background: var(--surface); border-radius: 12px; height: 120px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="PokéCeny, domov">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h13.5L28 14.5 17.5 28 4 14.5z" fill="#ffc21a"/><circle cx="11" cy="11" r="2.6" fill="#101a33"/></svg>
+      <span>Poké<b>Ceny</b></span>
+    </a>
+    <nav class="nav" aria-label="Sekcie">
+      <a href="/">Produkty</a>
+      <a href="/karty.html">Karty</a>
+      <a href="/sety.html" aria-current="page">Sety</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap">
+    <h1>Sety</h1>
+    <p>Vyber set a uvidíš všetky jeho karty s cenami z Cardmarketu a produkty, ktoré sa k nemu predávajú v slovenských obchodoch.</p>
+    <label for="find" hidden>Hľadať set</label>
+    <input id="find" class="find" type="search" placeholder="Hľadať set, napr. Obsidian Flames" autocomplete="off">
+  </div>
+</section>
+
+<main>
+  <div class="wrap">
+    <div id="list"></div>
+    <div id="detail" hidden></div>
+  </div>
+</main>
+<script src="/sety.js"></script>
+</body>
+</html>

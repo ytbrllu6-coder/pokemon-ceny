@@ -30,6 +30,7 @@ const SET_ALIASES = { '30c': '30C', '25c': 'CEL' };
 function setClause(set) {
   const s = String(set || '').toLowerCase().replace(/[^a-z0-9.]/g, '').slice(0, 12);
   if (!s) return null;
+  if (s.startsWith('id.')) return `set.id:${s.slice(3)}`;
   if (SET_ALIASES[s]) return `set.ptcgoCode:${SET_ALIASES[s]}`;
   return /^[a-z]{2,5}$/.test(s) ? `set.ptcgoCode:${s.toUpperCase()}` : `set.id:${s}`;
 }

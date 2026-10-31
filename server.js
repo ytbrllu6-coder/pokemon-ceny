@@ -7,6 +7,7 @@ const { searchAll, featured, related, warmUp } = require('./search');
 const { SHOPS } = require('./shops');
 const { findCards, buildQueries } = require('./cards');
 const { findTcgdex, debugTcgdex } = require('./tcgdex');
+const { listSets, setCards } = require('./sets');
 const { parseListing } = require('./listing');
 const external = require('./external');
 
@@ -156,6 +157,26 @@ const server = http.createServer(async (req, res) => {
       name: (url.searchParams.get('name') || '').slice(0, 60),
       number: (url.searchParams.get('number') || '').slice(0, 6),
     }));
+  }
+
+  // Sety a karty v sete
+  if (url.pathname === '/api/sets') {
+    try {
+      return sendJson(res, 200, await listSets());
+    } catch (err) {
+      console.error(err);
+      return sendJson(res, 502, { error: 'Zoznam setov sa teraz nepodarilo načítať, skús to o chvíľu.' });
+    }
+  }
+  if (url.pathname === '/api/set-cards') {
+    const id = url.searchParams.get('id') || '';
+    if (!/^(tcgdex:)?[A-Za-z0-9._-]{1,30}$/.test(id)) return sendJson(res, 400, { error: 'Neplatný set.' });
+    try {
+      return sendJson(res, 200, await setCards(id));
+    } catch (err) {
+      console.error(err);
+      return sendJson(res, 502, { error: 'Karty setu sa teraz nepodarilo načítať, skús to o chvíľu.' });
+    }
   }
 
   // Cena jednotlivej karty (Cardmarket cez Pokémon TCG API)
