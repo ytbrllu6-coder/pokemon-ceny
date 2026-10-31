@@ -86,23 +86,75 @@ async function dexCards(dexId) {
   }));
 }
 
+const normNum = (n) => String(n ?? '').toLowerCase().replace(/^0+(?=\d)/, '');
+
+// paralelné spracovanie so stropom (nezaťažíme TCGdex stovkami požiadaviek naraz)
+async function pool(items, size, fn) {
+  let k = 0;
+  await Promise.all(Array.from({ length: size }, async () => {
+    while (k < items.length) await fn(items[k++]);
+  }));
+}
+
+function applyPricing(card, detail) {
+  const cm = detail?.pricing?.cardmarket;
+  if (!cm || !(cm.avg30 > 0)) return;
+  card.avg30 = cm.avg30;
+  card.trend = cm.trend > 0 ? cm.trend : card.trend;
+  card.updated = cm.updated ? String(cm.updated).slice(0, 10) : card.updated;
+}
+
+// karty bez ceny doplní z TCGdex (cena je pri každej karte zvlášť, preto limit času; zvyšok sa dopĺňa pri ďalších návštevách z pamäte)
+async function enrichPrices(set, cards) {
+  const missing = cards.filter((c) => !c.avg30);
+  if (!missing.length) return;
+  const deadline = Date.now() + 25000;
+  let byNum = null;
+  if (!cards[0].id.startsWith('tcgdex:')) {
+    const dex = await getJson(`${TCGDEX}/sets`);
+    const match = (Array.isArray(dex) ? dex : []).find((d) => flat(d.name) === flat(set.name));
+    if (!match) return;
+    const d = await getJson(`${TCGDEX}/sets/${encodeURIComponent(match.id)}`);
+    byNum = new Map((d.cards || []).map((c) => [normNum(c.localId), c.id]));
+  }
+  await pool(missing, 8, async (card) => {
+    if (Date.now() > deadline) return;
+    const dexId = byNum ? byNum.get(normNum(card.number)) : card.id.slice(7);
+    if (!dexId) return;
+    const detail = await getJson(`${TCGDEX}/cards/${encodeURIComponent(dexId)}`).catch(() => null);
+    applyPricing(card, detail);
+  });
+}
+
 async function setCards(id) {
   const { sets } = await listSets();
   const set = sets.find((s) => s.id === id) || { id, name: id, series: '', total: null, date: null, logo: null, symbol: null, code: null };
-  if (id.startsWith('tcgdex:')) return { set, cards: await dexCards(id.slice(7)), source: 'tcgdex' };
-  try {
-    const json = await getJson(`${PTCG}/cards?q=${encodeURIComponent('set.id:' + id)}&pageSize=250&select=id,name,number,rarity,set,cardmarket,images`);
-    const cards = (json.data || []).map((c) => {
-      const n = normCard(c);
-      return { id: n.id, name: n.name, number: n.number, rarity: n.rarity, image: n.image, avg30: n.avg30, trend: n.trend, updated: n.updated, cmUrl: n.cmUrl };
-    });
-    if (cards.length) return { set, cards, source: 'pokemontcg' };
-  } catch { /* skúsime zálohu */ }
-  // záloha: set s rovnakým názvom v TCGdex (karty bez cien)
-  const dex = await getJson(`${TCGDEX}/sets`);
-  const match = (Array.isArray(dex) ? dex : []).find((d) => flat(d.name) === flat(set.name));
-  if (!match) throw new Error('set sa nenašiel v zálohe');
-  return { set, cards: await dexCards(match.id), source: 'tcgdex' };
+  let result = null;
+  if (id.startsWith('tcgdex:')) {
+    result = { set, cards: await dexCards(id.slice(7)), source: 'tcgdex' };
+  } else {
+    try {
+      const json = await getJson(`${PTCG}/cards?q=${encodeURIComponent('set.id:' + id)}&pageSize=250&select=id,name,number,rarity,set,cardmarket,images`);
+      const cards = (json.data || []).map((c) => {
+        const n = normCard(c);
+        return { id: n.id, name: n.name, number: n.number, rarity: n.rarity, image: n.image, avg30: n.avg30, trend: n.trend, updated: n.updated, cmUrl: n.cmUrl };
+      });
+      if (cards.length) result = { set, cards, source: 'pokemontcg' };
+    } catch { /* skúsime zálohu */ }
+    if (!result) {
+      // záloha: set s rovnakým názvom v TCGdex
+      const dex = await getJson(`${TCGDEX}/sets`);
+      const match = (Array.isArray(dex) ? dex : []).find((d) => flat(d.name) === flat(set.name));
+      if (!match) throw new Error('set sa nenašiel v zálohe');
+      result = { set, cards: await dexCards(match.id), source: 'tcgdex' };
+    }
+  }
+  const priced = result.cards.filter((c) => c.avg30).length;
+  if (result.cards.length && priced < result.cards.length * 0.8) {
+    await enrichPrices(set, result.cards).catch(() => {});
+    if (result.source === 'tcgdex' && result.cards.some((c) => c.avg30)) result.source = 'tcgdex+ceny';
+  }
+  return result;
 }
 
 module.exports = { listSets, setCards };

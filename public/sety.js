@@ -118,6 +118,7 @@
       </div>
       <p class="note">${source === 'tcgdex'
         ? 'Ceny teraz nie sú dostupné (záložný zdroj). Kliknutím na kartu zistíš cenu v sekcii Karty.'
+        : source === 'tcgdex+ceny' ? `Ceny: 30-dňový priemer z Cardmarketu (TCGdex)${dates.length ? ', stav k ' + esc(fmtDate(dates[dates.length - 1])) : ''}. Ak niektorým kartám cena chýba, otvor set znova, doplnia sa.`
         : `Ceny: 30-dňový priemer z Cardmarketu${dates.length ? ', stav k ' + esc(fmtDate(dates[dates.length - 1])) : ''}. Pri nových setoch cena chýba a pri niektorých môže byť zastaraná.`}</p>
       <div class="cards" id="grid"></div>`;
     const draw = () => {
