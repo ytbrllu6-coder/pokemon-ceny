@@ -141,6 +141,7 @@ function render() {
         <small>${i.kind === 'card' ? 'Karta' : 'Produkt'}${i.sub ? ' · ' + esc(i.sub) : ''}</small>
         <div class="edit">
           <label>Počet <input data-n="${n}" data-f="qty" type="number" min="1" step="1" value="${i.qty}"></label>
+          <label>Cena (€/ks) <input data-n="${n}" data-f="price" type="text" inputmode="decimal" value="${i.price != null ? String(i.price).replace('.', ',') : ''}" placeholder="doplň"></label>
           <label>Nákupná cena (€/ks) <input data-n="${n}" data-f="buy" type="text" inputmode="decimal" value="${i.buy != null ? String(i.buy).replace('.', ',') : ''}" placeholder="voliteľné"></label>
           <button type="button" data-del="${n}">Odstrániť</button>
         </div>
@@ -157,6 +158,7 @@ $('items').addEventListener('change', (e) => {
   if (n == null) return;
   const i = items[n];
   if (e.target.dataset.f === 'qty') i.qty = Math.max(1, Math.round(Number(e.target.value)) || 1);
+  else if (e.target.dataset.f === 'price') i.price = e.target.value.trim() === '' ? null : parse(e.target.value);
   else i.buy = e.target.value.trim() === '' ? null : parse(e.target.value);
   Portfolio.save(items);
   render();
@@ -187,20 +189,23 @@ async function refreshOne(i) {
   return true;
 }
 
-$('refresh').addEventListener('click', async () => {
+async function refreshAll(onlyMissing) {
   $('refresh').disabled = true;
+  const list = items.filter((i) => !onlyMissing || i.price == null);
   let ok = 0, fail = 0;
-  for (const [k, i] of items.entries()) {
-    $('msg').textContent = `Obnovujem ${k + 1} z ${items.length}…`;
+  for (const [k, i] of list.entries()) {
+    $('msg').textContent = `Obnovujem ${k + 1} z ${list.length}…`;
     try { (await refreshOne(i)) ? ok++ : fail++; } catch { fail++; }
     Portfolio.save(items);
     render();
   }
-  $('msg').textContent = fail ? `Obnovené: ${ok}, bez novej ceny: ${fail} (ostala posledná známa cena).` : `Ceny obnovené (${ok}).`;
+  $('msg').textContent = !list.length ? '' : fail ? `Obnovené: ${ok}. Pri ${fail} položkách sa cena nenašla, zadaj ju ručne do poľa Cena.` : `Ceny obnovené (${ok}).`;
   $('refresh').disabled = false;
-});
+}
+$('refresh').addEventListener('click', () => refreshAll(false));
 
 render();
+if (items.some((i) => i.price == null)) refreshAll(true);
 </script>
 </body>
 </html>

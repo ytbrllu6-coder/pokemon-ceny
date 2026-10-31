@@ -339,7 +339,7 @@
           <div><dt>Najnižšia</dt><dd>${fmt(c.low)}</dd></div>
           ${c.reverseAvg30 ? `<div><dt>Reverse holo, 30 dní</dt><dd>${fmt(c.reverseAvg30)}</dd></div>` : ''}
         </dl>
-        ${base ? `<button type="button" class="go quiet" id="addCard">+ Pridať do portfólia</button>` : ''}
+        ${base ? `<button type="button" class="go quiet" id="addCard">${window.pfLabel && window.pfLabel('card:' + c.id).startsWith('✓') ? window.pfLabel('card:' + c.id) : '+ Pridať do portfólia'}</button>` : ''}
         <p class="upd">${c.updated ? 'Ceny aktualizované ' + esc(c.updated) + '. ' : ''}Zdroj: Cardmarket cez Pokémon TCG API.</p>
         ${c.cmUrl && /^https?:\/\//i.test(c.cmUrl)
           ? `<a class="go" href="${esc(c.cmUrl)}" target="_blank" rel="noopener noreferrer">Otvoriť na Cardmarkete</a>`
@@ -373,6 +373,7 @@
       const price = c && (c.avg30 || state.manual);
       if (c && price && window.Portfolio) {
         window.Portfolio.add({ key: 'card:' + c.id, kind: 'card', name: c.name, sub: `${c.setName || ''} #${c.number}`, image: c.image, url: c.cmUrl || null, price, ref: { name: c.name, number: c.number, set: c.id } });
+        e.target.textContent = window.pfLabel('card:' + c.id);
       }
       return;
     }

@@ -134,7 +134,7 @@
           <b>${esc(c.name)}</b>
           <small>#${esc(c.number)}${c.rarity ? ' · ' + esc(c.rarity) : ''}</small>
           <span class="pr">${c.avg30 ? eur.format(c.avg30) : '<small>bez ceny</small>'}</span>
-        </a><button type="button" class="add" data-card="${esc(c.id)}">+ Portfólio</button></div>`;
+        </a><button type="button" class="add" data-card="${esc(c.id)}">${window.pfLabel ? window.pfLabel('card:' + c.id) : '+ Portfólio'}</button></div>`;
       }).join('') : '<p class="empty">Žiadna karta sa nenašla.</p>';
     };
     $('cf').addEventListener('input', draw);
@@ -155,7 +155,7 @@
           ${r.image ? `<img src="${esc(r.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<div class="ph"></div>'}
           <div><h4><a class="title" href="${esc(r.url)}" target="_blank" rel="noopener noreferrer">${esc(r.title)}</a></h4>
           <small>${esc(r.shopName)} · ${r.inStock ? 'Skladom' : 'Nie je skladom'}</small></div>
-          <div class="price">${eur.format(r.price)}<button type="button" class="add" data-prod="${esc(r.url)}">+ Portfólio</button></div>
+          <div class="price">${eur.format(r.price)}<button type="button" class="add" data-prod="${esc(r.url)}">${window.pfLabel ? window.pfLabel(r.url) : '+ Portfólio'}</button></div>
         </div>`).join('') : '<p class="empty">V obchodoch sme k tomuto setu nenašli žiadne produkty.</p>';
     } catch (err) {
       if ($('prods')) $('prods').innerHTML = `<p class="empty">${esc(err.message)}</p>`;
@@ -175,9 +175,13 @@
       const c = state.cards.cards.find((x) => x.id === b.dataset.card);
       if (!c) return;
       window.Portfolio.add({ key: 'card:' + c.id, kind: 'card', name: c.name, sub: `${state.cur.name} #${c.number}`, image: c.image, url: c.cmUrl || null, price: c.avg30 || null, ref: { name: c.name, number: num(c.number) || c.number } });
+      window.Portfolio.mark(b, 'card:' + c.id);
     } else if (b.dataset.prod != null && state.products) {
       const r = state.products.results.find((x) => x.url === b.dataset.prod);
-      if (r) window.Portfolio.add({ key: r.url, kind: 'product', name: r.title, sub: r.shopName, image: r.image || null, url: r.url, price: r.price, ref: { q: r.title } });
+      if (r) {
+        window.Portfolio.add({ key: r.url, kind: 'product', name: r.title, sub: r.shopName, image: r.image || null, url: r.url, price: r.price, ref: { q: r.title } });
+        window.Portfolio.mark(b, r.url);
+      }
     }
   });
   $('find').addEventListener('input', renderList);

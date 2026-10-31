@@ -42,7 +42,12 @@
     toast(hit ? 'Počet zvýšený.' : 'Pridané do portfólia.');
   }
 
-  window.Portfolio = { load, save, add };
+  const qtyOf = (key) => (load().find((i) => i.key === key) || {}).qty || 0;
+  // popis tlačidla: s fajkou, ak je položka už v portfóliu
+  window.pfLabel = (key) => { const q = qtyOf(key); return q ? `✓ V portfóliu${q > 1 ? ' ×' + q : ''}` : '+ Portfólio'; };
+  const mark = (btn, key) => { if (btn) { btn.textContent = window.pfLabel(key); btn.classList.add('added'); } };
+
+  window.Portfolio = { load, save, add, mark };
 
   // tlačidlá „+ Portfólio“ pri produktoch na hlavnej stránke
   document.addEventListener('click', (e) => {
@@ -51,5 +56,6 @@
     const r = state.data.results.find((x) => x.url === b.dataset.add);
     if (!r) return;
     add({ key: r.url, kind: 'product', name: r.title, sub: r.shopName, image: r.image || null, url: r.url, price: r.price, ref: { q: r.title } });
+    mark(b, r.url);
   });
 })();
