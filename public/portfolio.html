@@ -115,12 +115,18 @@ function totals() {
 
 function renderSum() {
   const t = totals();
+  const part = (kind) => items.filter((i) => i.kind === kind).reduce((a, i) => ({ v: a.v + (i.price || 0) * i.qty, n: a.n + i.qty }), { v: 0, n: 0 });
+  const cards = part('card');
+  const prods = part('product');
   const hasCost = items.some((i) => i.buy != null);
   const costOf = items.filter((i) => i.buy != null);
   const valOfCosted = costOf.reduce((a, i) => a + (i.price || 0) * i.qty, 0);
   const diff = valOfCosted - t.cost;
   $('sum').innerHTML = `
     <div class="tot"><span>Hodnota portfólia</span><b>${eur.format(t.value)}</b></div>
+    <div><span>Karty (${cards.n} ks)</span><b>${eur.format(cards.v)}</b></div>
+    <div><span>Produkty (${prods.n} ks)</span><b>${eur.format(prods.v)}</b></div>
+    <div><span>Karty pri odkupe za ${pct} %</span><b>${eur.format(Math.round(cards.v * pct) / 100)}</b></div>
     <div><span>Pri odkupe za ${pct} %</span><b>${eur.format(Math.round(t.value * pct) / 100)}</b></div>
     <div><span>Kusov</span><b>${t.count}</b></div>
     ${hasCost ? `<div><span>Zisk / strata (pri položkách s nákupnou cenou)</span><b style="color:${diff >= 0 ? 'var(--tag)' : '#ff8a80'}">${diff >= 0 ? '+' : ''}${eur.format(diff)}</b></div>` : ''}`;
