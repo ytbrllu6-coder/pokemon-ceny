@@ -89,6 +89,7 @@
       <button type="button" class="go" id="refresh">Obnoviť ceny</button>
       <span class="note" id="msg"></span>
     </div>
+    <p class="note" id="miss" style="color:#c0392b"></p>
     <p class="note">Portfólio je uložené len v tomto prehliadači. Hodnota kariet je 30-dňový priemer z Cardmarketu, hodnota produktov najnižšia cena v obchodoch.</p>
     <div id="items"></div>
   </div>
@@ -114,6 +115,8 @@ function totals() {
 }
 
 function renderSum() {
+  const missing = items.filter((i) => i.price == null).length;
+  $('miss').textContent = missing ? `${missing} položiek nemá cenu, preto sa nepočítajú do hodnoty. Zadaj ju ručne do poľa Cena.` : '';
   const t = totals();
   const part = (kind) => items.filter((i) => i.kind === kind).reduce((a, i) => ({ v: a.v + (i.price || 0) * i.qty, n: a.n + i.qty }), { v: 0, n: 0 });
   const cards = part('card');
@@ -147,12 +150,12 @@ function render() {
         <small>${i.kind === 'card' ? 'Karta' : 'Produkt'}${i.sub ? ' · ' + esc(i.sub) : ''}</small>
         <div class="edit">
           <label>Počet <input data-n="${n}" data-f="qty" type="number" min="1" step="1" value="${i.qty}"></label>
-          <label>Cena (€/ks) <input data-n="${n}" data-f="price" type="text" inputmode="decimal" value="${i.price != null ? String(i.price).replace('.', ',') : ''}" placeholder="doplň"></label>
+          <label>Cena (€/ks) <input data-n="${n}" data-f="price" type="text" inputmode="decimal" value="${i.price != null ? String(i.price).replace('.', ',') : ''}" placeholder="doplň"${i.price == null ? ' style="border-color:#c0392b"' : ''}></label>
           <label>Nákupná cena (€/ks) <input data-n="${n}" data-f="buy" type="text" inputmode="decimal" value="${i.buy != null ? String(i.buy).replace('.', ',') : ''}" placeholder="voliteľné"></label>
           <button type="button" data-del="${n}">Odstrániť</button>
         </div>
       </div>
-      <div class="val"><b>${i.price != null ? eur.format(i.price * i.qty) : '–'}</b>
+      <div class="val"><b>${i.price != null ? eur.format(i.price * i.qty) : '<small style="color:#c0392b">chýba cena</small>'}</b>
         <small>${i.qty > 1 && i.price != null ? i.qty + ' × ' + eur.format(i.price) : ''}</small>
         ${gain != null ? `<div class="${gain >= 0 ? 'up' : 'down'}">${gain >= 0 ? '+' : ''}${eur.format(gain)}</div>` : ''}</div>
     </div>`;
@@ -182,7 +185,11 @@ async function refreshOne(i) {
     const q = new URLSearchParams({ name: i.ref.name, number: i.ref.number });
     const res = await fetch('/api/card?' + q);
     const d = await res.json();
-    const c = (d.cards || []).find((x) => 'card:' + x.id === i.key);
+    const setPart = String(i.sub || '').replace(/\s*#.*$/, '').toLowerCase();
+    const same = (d.cards || []).filter((x) => x.avg30 && String(x.name).toLowerCase() === String(i.name).toLowerCase());
+    const c = (d.cards || []).find((x) => 'card:' + x.id === i.key)
+      || same.find((x) => setPart && String(x.setName || '').toLowerCase() === setPart)
+      || (same.length === 1 ? same[0] : null);
     if (c && c.avg30) i.price = c.avg30;
     else return false;
   } else if (i.kind === 'product') {
