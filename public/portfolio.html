@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfólio – PokéCeny</title>
+<meta name="description" content="Tvoje karty a zapečatené produkty s aktuálnou hodnotou.">
+<style>
+  :root {
+    --paper: #eef1f6; --surface: #ffffff; --ink: #101a33; --muted: #5b6578; --line: #d9dfeb;
+    --action: #2b55e6; --action-ink: #ffffff; --tag: #ffc21a; --stock: #1b8a5a;
+    --shadow: 0 1px 0 rgba(16, 26, 51, .06), 0 8px 24px -12px rgba(16, 26, 51, .25);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0c1224; --surface: #151d36; --ink: #eef1fa; --muted: #9aa6c2; --line: #263052;
+      --action: #6c8cff; --action-ink: #0c1224; --stock: #46d19a;
+      --shadow: 0 1px 0 rgba(0, 0, 0, .3), 0 10px 28px -14px rgba(0, 0, 0, .7);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 "Avenir Next", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif; font-variant-numeric: tabular-nums; }
+  a { color: inherit; }
+  :focus-visible { outline: 3px solid var(--action); outline-offset: 2px; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+
+  header.top { background: var(--ink); color: #fff; }
+  header.top .wrap { display: flex; align-items: center; gap: 10px; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.15rem; letter-spacing: -.01em; text-decoration: none; color: #fff; }
+  .brand svg { width: 26px; height: 26px; }
+  .brand b { color: var(--tag); font-weight: 800; }
+  .nav { margin-left: auto; display: flex; gap: 4px; }
+  .nav a { color: #b8c2dc; text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: .95rem; }
+  .nav a:hover { color: #fff; }
+  .nav a[aria-current="page"] { background: rgba(255, 255, 255, .14); color: #fff; }
+
+  .hero { background: var(--ink); color: #fff; padding: 26px 0 30px; }
+  .hero h1 { margin: 0 0 14px; font-size: clamp(1.7rem, 4.6vw, 2.5rem); letter-spacing: -.025em; font-weight: 800; }
+  .sum { display: flex; flex-wrap: wrap; gap: 8px 36px; }
+  .sum div span { display: block; color: #b8c2dc; font-size: .85rem; }
+  .sum div b { font-size: 1.9rem; letter-spacing: -.02em; }
+  .sum .tot b { color: var(--tag); font-size: 2.4rem; }
+  main { padding: 22px 0 56px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .go { border: 0; border-radius: 8px; padding: 9px 16px; font: inherit; font-weight: 700; background: var(--action); color: var(--action-ink); cursor: pointer; text-decoration: none; display: inline-block; }
+  .go.quiet { background: transparent; color: var(--action); border: 1px solid var(--line); }
+  .note { color: var(--muted); font-size: .88rem; margin: 0 0 12px; }
+  .it { display: grid; grid-template-columns: 64px 1fr auto; gap: 14px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); }
+  .it img, .it .ph { width: 64px; height: 88px; object-fit: contain; border-radius: 6px; background: var(--line); }
+  .it.prod img, .it.prod .ph { height: 64px; background: #fff; }
+  .it h4 { margin: 0; font-size: 1rem; line-height: 1.3; }
+  .it small { color: var(--muted); }
+  .edit { display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 6px; align-items: center; font-size: .85rem; color: var(--muted); }
+  .edit input { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; width: 78px; }
+  .edit button { border: 0; background: none; color: var(--nostock, #a05a00); cursor: pointer; font: inherit; text-decoration: underline; padding: 0; }
+  .val { text-align: right; white-space: nowrap; }
+  .val b { font-size: 1.2rem; display: block; }
+  .val .up { color: var(--stock); font-weight: 700; font-size: .85rem; }
+  .val .down { color: #c0392b; font-weight: 700; font-size: .85rem; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+  .empty a { color: var(--action); font-weight: 700; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/" aria-label="PokéCeny, domov">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M4 4h13.5L28 14.5 17.5 28 4 14.5z" fill="#ffc21a"/><circle cx="11" cy="11" r="2.6" fill="#101a33"/></svg>
+      <span>Poké<b>Ceny</b></span>
+    </a>
+    <nav class="nav" aria-label="Sekcie">
+      <a href="/">Produkty</a>
+      <a href="/karty.html">Karty</a>
+      <a href="/sety.html">Sety</a>
+      <a href="/portfolio.html" aria-current="page">Portfólio</a>
+    </nav>
+  </div>
+</header>
+<section class="hero">
+  <div class="wrap">
+    <h1>Portfólio</h1>
+    <div class="sum" id="sum"></div>
+  </div>
+</section>
+<main>
+  <div class="wrap">
+    <div class="bar">
+      <button type="button" class="go" id="refresh">Obnoviť ceny</button>
+      <span class="note" id="msg"></span>
+    </div>
+    <p class="note">Portfólio je uložené len v tomto prehliadači. Hodnota kariet je 30-dňový priemer z Cardmarketu, hodnota produktov najnižšia cena v obchodoch.</p>
+    <div id="items"></div>
+  </div>
+</main>
+<script src="/portfolio.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const eur = new Intl.NumberFormat('sk-SK', { style: 'currency', currency: 'EUR' });
+const parse = (v) => { const n = parseFloat(String(v).replace(/\s/g, '').replace(',', '.')); return n >= 0 && n < 1e7 ? n : null; };
+let items = Portfolio.load();
+let pct = 90;
+try { const p = Number(localStorage.getItem('pokeceny.pct')); if (p >= 1 && p <= 200) pct = p; } catch {}
+
+function totals() {
+  let value = 0, cost = 0, count = 0;
+  for (const i of items) {
+    value += (i.price || 0) * i.qty;
+    count += i.qty;
+    if (i.buy != null) cost += i.buy * i.qty;
+  }
+  return { value, cost, count };
+}
+
+function renderSum() {
+  const t = totals();
+  const hasCost = items.some((i) => i.buy != null);
+  const costOf = items.filter((i) => i.buy != null);
+  const valOfCosted = costOf.reduce((a, i) => a + (i.price || 0) * i.qty, 0);
+  const diff = valOfCosted - t.cost;
+  $('sum').innerHTML = `
+    <div class="tot"><span>Hodnota portfólia</span><b>${eur.format(t.value)}</b></div>
+    <div><span>Pri odkupe za ${pct} %</span><b>${eur.format(Math.round(t.value * pct) / 100)}</b></div>
+    <div><span>Kusov</span><b>${t.count}</b></div>
+    ${hasCost ? `<div><span>Zisk / strata (pri položkách s nákupnou cenou)</span><b style="color:${diff >= 0 ? 'var(--tag)' : '#ff8a80'}">${diff >= 0 ? '+' : ''}${eur.format(diff)}</b></div>` : ''}`;
+}
+
+function render() {
+  renderSum();
+  if (!items.length) {
+    $('items').innerHTML = '<p class="empty">Portfólio je prázdne. Pridaj karty v sekcii <a href="/karty.html">Karty</a> alebo produkty v <a href="/">Produkty</a> cez tlačidlo „+ Portfólio“.</p>';
+    return;
+  }
+  $('items').innerHTML = items.map((i, n) => {
+    const gain = i.buy != null && i.price != null ? (i.price - i.buy) * i.qty : null;
+    return `<div class="it ${i.kind === 'product' ? 'prod' : ''}">
+      ${i.image ? `<img src="${esc(i.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<div class="ph"></div>'}
+      <div>
+        <h4>${i.url && /^https?:\/\//.test(i.url) ? `<a href="${esc(i.url)}" target="_blank" rel="noopener noreferrer" style="color:inherit">${esc(i.name)}</a>` : esc(i.name)}</h4>
+        <small>${i.kind === 'card' ? 'Karta' : 'Produkt'}${i.sub ? ' · ' + esc(i.sub) : ''}</small>
+        <div class="edit">
+          <label>Počet <input data-n="${n}" data-f="qty" type="number" min="1" step="1" value="${i.qty}"></label>
+          <label>Nákupná cena (€/ks) <input data-n="${n}" data-f="buy" type="text" inputmode="decimal" value="${i.buy != null ? String(i.buy).replace('.', ',') : ''}" placeholder="voliteľné"></label>
+          <button type="button" data-del="${n}">Odstrániť</button>
+        </div>
+      </div>
+      <div class="val"><b>${i.price != null ? eur.format(i.price * i.qty) : '–'}</b>
+        <small>${i.qty > 1 && i.price != null ? i.qty + ' × ' + eur.format(i.price) : ''}</small>
+        ${gain != null ? `<div class="${gain >= 0 ? 'up' : 'down'}">${gain >= 0 ? '+' : ''}${eur.format(gain)}</div>` : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+$('items').addEventListener('change', (e) => {
+  const n = e.target.dataset.n;
+  if (n == null) return;
+  const i = items[n];
+  if (e.target.dataset.f === 'qty') i.qty = Math.max(1, Math.round(Number(e.target.value)) || 1);
+  else i.buy = e.target.value.trim() === '' ? null : parse(e.target.value);
+  Portfolio.save(items);
+  render();
+});
+$('items').addEventListener('click', (e) => {
+  const d = e.target.dataset.del;
+  if (d == null) return;
+  items.splice(Number(d), 1);
+  Portfolio.save(items);
+  render();
+});
+
+async function refreshOne(i) {
+  if (i.kind === 'card' && i.ref) {
+    const q = new URLSearchParams({ name: i.ref.name, number: i.ref.number });
+    const res = await fetch('/api/card?' + q);
+    const d = await res.json();
+    const c = (d.cards || []).find((x) => 'card:' + x.id === i.key);
+    if (c && c.avg30) i.price = c.avg30;
+    else return false;
+  } else if (i.kind === 'product') {
+    const res = await fetch('/api/search?q=' + encodeURIComponent(i.ref?.q || i.name));
+    const d = await res.json();
+    const r = (d.results || []).find((x) => x.url === i.key);
+    if (r) i.price = r.price;
+    else return false;
+  }
+  return true;
+}
+
+$('refresh').addEventListener('click', async () => {
+  $('refresh').disabled = true;
+  let ok = 0, fail = 0;
+  for (const [k, i] of items.entries()) {
+    $('msg').textContent = `Obnovujem ${k + 1} z ${items.length}…`;
+    try { (await refreshOne(i)) ? ok++ : fail++; } catch { fail++; }
+    Portfolio.save(items);
+    render();
+  }
+  $('msg').textContent = fail ? `Obnovené: ${ok}, bez novej ceny: ${fail} (ostala posledná známa cena).` : `Ceny obnovené (${ok}).`;
+  $('refresh').disabled = false;
+});
+
+render();
+</script>
+</body>
+</html>

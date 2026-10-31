@@ -254,6 +254,7 @@
       <a href="/" aria-current="page">Produkty</a>
       <a href="/karty.html">Karty</a>
       <a href="/sety.html">Sety</a>
+      <a href="/portfolio.html">Portfólio</a>
     </nav>
   </div>
 </header>
@@ -408,6 +409,7 @@ function render() {
             ${better && spread > 0.005 ? `<div class="save">Ušetríš až ${eur.format(spread)}</div>` : '<div class="save"></div>'}
           </div>
           <a class="go" href="${safeUrl(winner.url)}" target="_blank" rel="noopener noreferrer">Otvoriť v obchode</a>
+          <button type="button" class="go quiet" data-add="${esc(winner.url)}">+ Portfólio</button>
         </div>
       </article>`;
     }
@@ -423,6 +425,7 @@ function render() {
         </div>
         <div class="price">${eur.format(outCard.price)}</div>
         <a class="go quiet" href="${safeUrl(outCard.url)}" target="_blank" rel="noopener noreferrer">Do obchodu</a>
+        <button type="button" class="go quiet" data-add="${esc(outCard.url)}">+ Portfólio</button>
       </article>`;
     }
 
@@ -439,6 +442,7 @@ function render() {
           </div>
           <div class="price">${eur.format(r.price)}${diff}</div>
           <a class="go quiet" href="${safeUrl(r.url)}" target="_blank" rel="noopener noreferrer">Do obchodu</a>
+          <button type="button" class="go quiet" data-add="${esc(r.url)}">+ Portfólio</button>
         </article>`;
       }).join('');
       html += '</section>';
@@ -585,5 +589,6 @@ if (initial) search(initial); else loadFeatured();
 </script>
 <script src="/cardparse.js"></script>
 <script src="/smarty.js"></script>
+<script src="/portfolio.js"></script>
 </body>
 </html>

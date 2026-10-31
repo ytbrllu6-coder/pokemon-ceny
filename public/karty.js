@@ -339,6 +339,7 @@
           <div><dt>Najnižšia</dt><dd>${fmt(c.low)}</dd></div>
           ${c.reverseAvg30 ? `<div><dt>Reverse holo, 30 dní</dt><dd>${fmt(c.reverseAvg30)}</dd></div>` : ''}
         </dl>
+        ${base ? `<button type="button" class="go quiet" id="addCard">+ Pridať do portfólia</button>` : ''}
         <p class="upd">${c.updated ? 'Ceny aktualizované ' + esc(c.updated) + '. ' : ''}Zdroj: Cardmarket cez Pokémon TCG API.</p>
         ${c.cmUrl && /^https?:\/\//i.test(c.cmUrl)
           ? `<a class="go" href="${esc(c.cmUrl)}" target="_blank" rel="noopener noreferrer">Otvoriť na Cardmarkete</a>`
@@ -367,6 +368,14 @@
     if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch { /* nič */ } }
   });
   out.addEventListener('click', (e) => {
+    if (e.target.id === 'addCard') {
+      const c = state.cands[state.idx];
+      const price = c && (c.avg30 || state.manual);
+      if (c && price && window.Portfolio) {
+        window.Portfolio.add({ key: 'card:' + c.id, kind: 'card', name: c.name, sub: `${c.setName || ''} #${c.number}`, image: c.image, url: c.cmUrl || null, price, ref: { name: c.name, number: c.number, set: c.id } });
+      }
+      return;
+    }
     const b = e.target.closest('[data-i]');
     if (b) {
       state.idx = Number(b.dataset.i);
