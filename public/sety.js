@@ -180,6 +180,7 @@
     state.m = {
       own: new Set(Array.isArray(rec.own) ? rec.own : []),
       hasRh: rhPossible(),
+      noRh: store.noRh === 'copy' ? 'copy' : 'next',
       view: store.view === 'list' ? 'list' : 'binder',
       page: 0,
       filter: 'all',
@@ -192,6 +193,7 @@
     store.sets = store.sets || {};
     store.sets[state.cur.id] = { own: [...state.m.own] };
     store.view = state.m.view;
+    store.noRh = state.m.noRh;
     msave(store);
   }
 
@@ -215,18 +217,19 @@
     return state.cards.cards.some((c) => c.reverse > 0) || (y >= 2002 && state.cards.cards.some((c) => RH_RARITIES.has(c.rarity)));
   };
 
-  // Miesta v binderi: ku každej karte patrí vedľa jej reverse holo (alebo prázdne miesto, ak ho nemá), takže vždy vznikne dvojica.
+  // Miesta v binderi: vedľa každej karty je jej reverse holo. Karta, ktorá reverse holo nemá (napr. ex), má podľa voľby buď
+  // druhú kópiu (kľúč id:2), alebo hneď za ňou nasleduje ďalšia karta.
   function masterSlots() {
     const out = [];
     for (const c of [...state.cards.cards].sort(cmpNum)) {
       out.push({ key: c.id, c, rh: false, price: c.avg30 || null });
       if (!state.m.hasRh) continue;
-      out.push(rhEligible(c) ? { key: c.id + ':rh', c, rh: true, price: c.reverse || null } : { none: true, c, rh: true });
+      if (rhEligible(c)) out.push({ key: c.id + ':rh', c, rh: true, price: c.reverse || null });
+      else if (state.m.noRh === 'copy') out.push({ key: c.id + ':2', c, rh: false, copy: true, price: c.avg30 || null });
     }
     return out;
   }
-  // skutočné karty (bez prázdnych miest) pre súhrn a zoznam
-  const masterItems = () => masterSlots().filter((i) => !i.none);
+  const masterItems = masterSlots;
   const perPage = () => (state.m.hasRh ? 12 : 9);
 
   function mStats(items) {
@@ -249,14 +252,16 @@
     const st = mStats(items);
     const pct = st.total ? Math.floor((st.have / st.total) * 100) : 0;
     const total = state.cur.total;
-    const base = items.filter((i) => !i.rh);
+    const base = items.filter((i) => !i.rh && !i.copy);
+    const nRh = items.filter((i) => i.rh).length;
+    const nCopy = items.filter((i) => i.copy).length;
     const extra = total ? base.filter((i) => { const [p, n] = splitNum(i.c.number); return p !== '' || n > total; }).length : 0;
     $('msum').innerHTML = `
       <div class="mprog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="mfill" style="width:${pct}%"></div></div>
       <div class="mnums"><b>${st.have} / ${st.total}</b> <span>${pct} % hotovo</span>
         <span>Hodnota tvojich kariet: ${eur.format(st.haveVal)}</span>
         <span>Dokúpiť zhruba: ${eur.format(st.missVal)}</span></div>
-      <p class="note">${total ? `Set má ${esc(total)} očíslovaných kariet. ` : ''}Master set: ${base.length} kariet${extra ? ` (z toho ${extra} secret rare a špeciálnych nad číslovanie)` : ''}${items.length > base.length ? ` + ${items.length - base.length} reverse holo` : ''}. Ceny sú 30-dňový priemer z Cardmarketu${st.noPrice ? `; u ${st.noPrice} kariet cena chýba, do súčtov sa nepočíta` : ''}.</p>
+      <p class="note">${total ? `Set má ${esc(total)} očíslovaných kariet. ` : ''}Master set: ${base.length} kariet${extra ? ` (z toho ${extra} secret rare a špeciálnych nad číslovanie)` : ''}${nRh ? ` + ${nRh} reverse holo` : ''}${nCopy ? ` + ${nCopy} druhých kópií kariet bez reverse holo` : ''}. Ceny sú 30-dňový priemer z Cardmarketu${st.noPrice ? `; u ${st.noPrice} kariet cena chýba, do súčtov sa nepočíta` : ''}.</p>
       <div class="chips">${[...st.rar].map(([r, g]) => `<span class="chip${g.have === g.n ? ' done' : ''}">${esc(r)} ${g.have}/${g.n}</span>`).join('')}</div>`;
   }
 
@@ -275,11 +280,10 @@
       if (p >= pages) return '<div class="bpage blank"></div>';
       const slice = items.slice(p * per, (p + 1) * per);
       const slots = slice.map((it) => {
-        if (it.none) return '<span class="slot none" title="Táto karta nemá reverse holo"><span class="ph"></span><span class="sn">RH</span><span class="sname">nie je</span></span>';
         const own = m.own.has(it.key);
-        const label = `${it.c.name} #${it.c.number}${it.rh ? ' (reverse holo)' : ''}`;
+        const label = `${it.c.name} #${it.c.number}${it.rh ? ' (reverse holo)' : it.copy ? ' (2. kópia)' : ''}`;
         return `<button type="button" class="slot${own ? ' own' : ''}${it.rh ? ' rh' : ''}" data-k="${esc(it.key)}" aria-pressed="${own}" aria-label="${esc(label)}" title="${esc(label)}${it.price ? ' · ' + eur.format(it.price) : ''}">
-          ${slotImg(it.c)}<span class="sn">#${esc(it.c.number)}${it.rh ? ' RH' : ''}</span><span class="sname">${esc(it.c.name)}</span></button>`;
+          ${slotImg(it.c)}<span class="sn">#${esc(it.c.number)}${it.rh ? ' RH' : it.copy ? ' ×2' : ''}</span><span class="sname">${esc(it.c.name)}</span></button>`;
       });
       for (let i = slice.length; i < per; i++) slots.push('<span class="slot void"><span class="ph"></span><span class="sn">&nbsp;</span><span class="sname">&nbsp;</span></span>');
       return `<div class="bpage c${cols}">${slots.join('')}<span class="pn">Strana ${p + 1} z ${pages}</span></div>`;
@@ -336,7 +340,7 @@
       html += `<label class="mrow${own ? ' own' : ''}" data-k="${esc(it.key)}">
         <input type="checkbox"${own ? ' checked' : ''}>
         ${slotImg(it.c)}
-        <span><b>${esc(it.c.name)}${it.rh ? ' (reverse holo)' : ''}</b><small>#${esc(it.c.number)}${it.c.rarity ? ' · ' + esc(it.c.rarity) : ''}</small></span>
+        <span><b>${esc(it.c.name)}${it.rh ? ' (reverse holo)' : it.copy ? ' (2. kópia)' : ''}</b><small>#${esc(it.c.number)}${it.c.rarity ? ' · ' + esc(it.c.rarity) : ''}</small></span>
         <span class="mp">${it.price ? eur.format(it.price) : '<small>bez ceny</small>'}</span></label>`;
     }
     $('mrows').innerHTML = html || '<p class="empty">Žiadna karta nesedí na filter.</p>';
@@ -344,7 +348,7 @@
 
   function drawMasterView() {
     const slots = masterSlots();
-    const items = slots.filter((i) => !i.none);
+    const items = slots;
     drawSummary(items);
     if (!items.length) $('mview').innerHTML = '<p class="empty">Tento set nemá žiadne karty na zobrazenie.</p>';
     else if (state.m.view === 'binder') drawBinder(slots);
@@ -380,10 +384,19 @@
           <button type="button" id="mvB">Binder</button>
           <button type="button" id="mvL">Zoznam</button>
         </div>
+        ${m.hasRh ? `<label class="chk">Karta bez reverse holo:
+          <select id="mnr" aria-label="Čo je vedľa karty bez reverse holo">
+            <option value="next">hneď nasleduje ďalšia karta</option>
+            <option value="copy">druhá kópia tej istej karty</option>
+          </select></label>` : ''}
         <button type="button" class="ghost" id="mreset">Vynulovať</button>
       </div>
       <div id="mview"></div>`;
     $('mvB').onclick = () => { m.view = 'binder'; mPersist(); drawMasterView(); };
+    if (m.hasRh) {
+      $('mnr').value = m.noRh;
+      $('mnr').onchange = (e) => { m.noRh = e.target.value === 'copy' ? 'copy' : 'next'; m.page = 0; mPersist(); drawMasterView(); };
+    }
     $('mvL').onclick = () => { m.view = 'list'; mPersist(); drawMasterView(); };
     $('mreset').onclick = () => {
       if (!m.own.size || !confirm('Vynulovať všetky označené karty v tomto sete?')) return;
