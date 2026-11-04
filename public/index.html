@@ -210,6 +210,11 @@
   .nav a { color: #b8c2dc; text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: .95rem; }
   .nav a:hover { color: #fff; }
   .nav a[aria-current="page"] { background: rgba(255, 255, 255, .14); color: #fff; }
+  @media (max-width: 700px) {
+    header.top .wrap { flex-wrap: wrap; height: auto; padding-top: 8px; padding-bottom: 8px; row-gap: 4px; }
+    .nav { margin-left: 0; width: 100%; flex-wrap: wrap; }
+    .nav a { white-space: nowrap; }
+  }
 
   /* stavy */
   .empty { background: var(--surface); border-radius: 12px; padding: 36px 24px; text-align: center; box-shadow: var(--shadow); }
@@ -254,6 +259,7 @@
       <a href="/" aria-current="page">Produkty</a>
       <a href="/karty.html">Karty</a>
       <a href="/sety.html">Sety</a>
+      <a href="/sety.html?master">Master set guide</a>
       <a href="/portfolio.html">Portfólio</a>
     </nav>
   </div>

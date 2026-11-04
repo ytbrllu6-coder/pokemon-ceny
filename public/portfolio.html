@@ -34,6 +34,11 @@
   .nav a { color: #b8c2dc; text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 700; font-size: .95rem; }
   .nav a:hover { color: #fff; }
   .nav a[aria-current="page"] { background: rgba(255, 255, 255, .14); color: #fff; }
+  @media (max-width: 700px) {
+    header.top .wrap { flex-wrap: wrap; height: auto; padding-top: 8px; padding-bottom: 8px; row-gap: 4px; }
+    .nav { margin-left: 0; width: 100%; flex-wrap: wrap; }
+    .nav a { white-space: nowrap; }
+  }
 
   .hero { background: var(--ink); color: #fff; padding: 26px 0 30px; }
   .hero h1 { margin: 0 0 14px; font-size: clamp(1.7rem, 4.6vw, 2.5rem); letter-spacing: -.025em; font-weight: 800; }
@@ -73,6 +78,7 @@
       <a href="/">Produkty</a>
       <a href="/karty.html">Karty</a>
       <a href="/sety.html">Sety</a>
+      <a href="/sety.html?master">Master set guide</a>
       <a href="/portfolio.html" aria-current="page">Portfólio</a>
     </nav>
   </div>

@@ -11,6 +11,16 @@
   };
   const num = (n) => parseInt(String(n).replace(/\D+/g, ''), 10) || 0;
 
+  const MASTER = new URLSearchParams(location.search).has('master');
+  if (MASTER) {
+    document.title = 'Master set guide – PokéCeny';
+    document.querySelector('.hero h1').textContent = 'Master set guide';
+    document.querySelector('.hero p').textContent = 'Vyber set a uvidíš zoznam všetkých jeho kariet a virtuálny binder, v ktorom si označuješ, čo už máš.';
+    const a = document.getElementById('navSety'), b = document.getElementById('navMaster');
+    if (a) a.removeAttribute('aria-current');
+    if (b) b.setAttribute('aria-current', 'page');
+  }
+
   const state = { sets: [], loaded: false, cur: null, tab: 'cards', cards: null, products: null, m: null };
 
   async function api(path) {
@@ -48,7 +58,7 @@
     $('list').innerHTML = [...groups].map(([series, list]) => `
       <h2 class="series">${esc(series)}</h2>
       <div class="sets">${list.map((s) => `
-        <a class="set" href="#${encodeURIComponent(s.id)}">
+        <a class="set" href="#${encodeURIComponent(s.id)}${MASTER ? '/master' : ''}">
           <span class="logo">${s.logo ? `<img src="${esc(s.logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}</span>
           <b>${esc(s.name)}</b>
           <small>${s.total ? esc(s.total) + ' kariet' : ''}${s.total && s.date ? ' · ' : ''}${esc(fmtDate(s.date))}</small>
@@ -102,7 +112,7 @@
     const go = (tab) => {
       state.tab = tab;
       // odkaz na záložku sa dá zdieľať (#id/master); replaceState nespúšťa hashchange, takže set sa nenačíta znova
-      try { history.replaceState(null, '', '#' + encodeURIComponent(state.cur.id) + (tab === 'master' ? '/master' : '')); } catch { /* bez zmeny adresy */ }
+      try { history.replaceState(null, '', '#' + encodeURIComponent(state.cur.id) + (tab === 'master' ? '/master' : MASTER ? '/cards' : '')); } catch { /* bez zmeny adresy */ }
       renderDetail();
     };
     $('tabCards').onclick = () => go('cards');
@@ -437,7 +447,7 @@
   function route() {
     // #id alebo #id/master (id setu neobsahuje lomku)
     const [id, tab] = decodeURIComponent(location.hash.replace(/^#/, '')).split('/');
-    if (id) openSet(id, tab);
+    if (id) openSet(id, tab || (MASTER ? 'master' : 'cards'));
     else closeSet();
   }
   document.addEventListener('click', (e) => {
