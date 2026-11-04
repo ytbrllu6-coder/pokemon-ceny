@@ -179,9 +179,8 @@
     const rec = (store.sets || {})[state.cur.id] || {};
     state.m = {
       own: new Set(Array.isArray(rec.own) ? rec.own : []),
-      rh: !!rec.rh,
+      hasRh: rhPossible(),
       view: store.view === 'list' ? 'list' : 'binder',
-      per: store.per === 12 ? 12 : 9,
       page: 0,
       filter: 'all',
       q: '',
@@ -191,9 +190,8 @@
   function mPersist() {
     const store = mload();
     store.sets = store.sets || {};
-    store.sets[state.cur.id] = { own: [...state.m.own], rh: state.m.rh };
+    store.sets[state.cur.id] = { own: [...state.m.own] };
     store.view = state.m.view;
-    store.per = state.m.per;
     msave(store);
   }
 
@@ -217,14 +215,19 @@
     return state.cards.cards.some((c) => c.reverse > 0) || (y >= 2002 && state.cards.cards.some((c) => RH_RARITIES.has(c.rarity)));
   };
 
-  function masterItems() {
-    const sorted = [...state.cards.cards].sort(cmpNum);
-    const items = sorted.map((c) => ({ key: c.id, c, rh: false, price: c.avg30 || null }));
-    if (state.m.rh) {
-      for (const c of sorted) if (rhEligible(c)) items.push({ key: c.id + ':rh', c, rh: true, price: c.reverse || null });
+  // Miesta v binderi: ku každej karte patrí vedľa jej reverse holo (alebo prázdne miesto, ak ho nemá), takže vždy vznikne dvojica.
+  function masterSlots() {
+    const out = [];
+    for (const c of [...state.cards.cards].sort(cmpNum)) {
+      out.push({ key: c.id, c, rh: false, price: c.avg30 || null });
+      if (!state.m.hasRh) continue;
+      out.push(rhEligible(c) ? { key: c.id + ':rh', c, rh: true, price: c.reverse || null } : { none: true, c, rh: true });
     }
-    return items;
+    return out;
   }
+  // skutočné karty (bez prázdnych miest) pre súhrn a zoznam
+  const masterItems = () => masterSlots().filter((i) => !i.none);
+  const perPage = () => (state.m.hasRh ? 12 : 9);
 
   function mStats(items) {
     const own = state.m.own;
@@ -253,7 +256,7 @@
       <div class="mnums"><b>${st.have} / ${st.total}</b> <span>${pct} % hotovo</span>
         <span>Hodnota tvojich kariet: ${eur.format(st.haveVal)}</span>
         <span>Dokúpiť zhruba: ${eur.format(st.missVal)}</span></div>
-      <p class="note">${total ? `Set má ${esc(total)} očíslovaných kariet${extra ? `, master set ich má ${base.length} (vrátane ${extra} secret rare a špeciálnych nad toto číslovanie)` : ''}. ` : ''}Ceny sú 30-dňový priemer z Cardmarketu${st.noPrice ? `; u ${st.noPrice} kariet cena chýba, do súčtov sa nepočíta` : ''}.</p>
+      <p class="note">${total ? `Set má ${esc(total)} očíslovaných kariet. ` : ''}Master set: ${base.length} kariet${extra ? ` (z toho ${extra} secret rare a špeciálnych nad číslovanie)` : ''}${items.length > base.length ? ` + ${items.length - base.length} reverse holo` : ''}. Ceny sú 30-dňový priemer z Cardmarketu${st.noPrice ? `; u ${st.noPrice} kariet cena chýba, do súčtov sa nepočíta` : ''}.</p>
       <div class="chips">${[...st.rar].map(([r, g]) => `<span class="chip${g.have === g.n ? ' done' : ''}">${esc(r)} ${g.have}/${g.n}</span>`).join('')}</div>`;
   }
 
@@ -261,27 +264,29 @@
 
   function drawBinder(items) {
     const m = state.m;
+    const per = perPage();
     const spread = window.matchMedia('(min-width: 760px)').matches;
-    const pages = Math.max(1, Math.ceil(items.length / m.per));
+    const pages = Math.max(1, Math.ceil(items.length / per));
     m.page = Math.min(Math.max(0, m.page), pages - 1);
     if (spread) m.page -= m.page % 2;
     const step = spread ? 2 : 1;
-    const cols = m.per === 12 ? 4 : 3;
+    const cols = m.hasRh ? 4 : 3;
     const pageHtml = (p) => {
       if (p >= pages) return '<div class="bpage blank"></div>';
-      const slice = items.slice(p * m.per, (p + 1) * m.per);
+      const slice = items.slice(p * per, (p + 1) * per);
       const slots = slice.map((it) => {
+        if (it.none) return '<span class="slot none" title="Táto karta nemá reverse holo"><span class="ph"></span><span class="sn">RH</span><span class="sname">nie je</span></span>';
         const own = m.own.has(it.key);
         const label = `${it.c.name} #${it.c.number}${it.rh ? ' (reverse holo)' : ''}`;
         return `<button type="button" class="slot${own ? ' own' : ''}${it.rh ? ' rh' : ''}" data-k="${esc(it.key)}" aria-pressed="${own}" aria-label="${esc(label)}" title="${esc(label)}${it.price ? ' · ' + eur.format(it.price) : ''}">
           ${slotImg(it.c)}<span class="sn">#${esc(it.c.number)}${it.rh ? ' RH' : ''}</span><span class="sname">${esc(it.c.name)}</span></button>`;
       });
-      for (let i = slice.length; i < m.per; i++) slots.push('<span class="slot void"><span class="ph"></span><span class="sn">&nbsp;</span><span class="sname">&nbsp;</span></span>');
+      for (let i = slice.length; i < per; i++) slots.push('<span class="slot void"><span class="ph"></span><span class="sn">&nbsp;</span><span class="sname">&nbsp;</span></span>');
       return `<div class="bpage c${cols}">${slots.join('')}<span class="pn">Strana ${p + 1} z ${pages}</span></div>`;
     };
     const opts = [];
     for (let p = 0; p < pages; p += step) {
-      const first = items[p * m.per], last = items[Math.min(items.length, (p + step) * m.per) - 1];
+      const first = items[p * per], last = items[Math.min(items.length, (p + step) * per) - 1];
       opts.push(`<option value="${p}"${p === m.page ? ' selected' : ''}>Strana ${spread && p + 1 < pages ? `${p + 1}–${p + 2}` : p + 1} (#${esc(first.c.number)} – #${esc(last.c.number)})</option>`);
     }
     $('mview').innerHTML = `
@@ -291,8 +296,8 @@
         <button type="button" id="bnext"${m.page + step >= pages ? ' disabled' : ''} aria-label="Ďalšia strana">→</button>
       </div>
       <div class="binder${spread ? ' spread' : ''}">${spread ? pageHtml(m.page) + pageHtml(m.page + 1) : pageHtml(m.page)}</div>
-      <p class="note" style="margin-top:12px">Kliknutím na kartu ju označíš, že ju máš. Sivé karty ešte chýbajú. Šípky na klávesnici listujú stranami.</p>`;
-    const turn = (to) => { m.page = to; drawBinder(masterItems()); };
+      <p class="note" style="margin-top:12px">Vedľa každej karty je jej reverse holo (RH). Kliknutím označíš, ktorú máš: zelený rámik s fajkou. Šípky na klávesnici listujú stranami.</p>`;
+    const turn = (to) => { m.page = to; drawBinder(masterSlots()); };
     $('bprev').onclick = () => turn(m.page - step);
     $('bnext').onclick = () => turn(m.page + step);
     $('bjump').onchange = (e) => turn(Number(e.target.value));
@@ -326,9 +331,7 @@
       return !f || `${it.c.name} ${it.c.number} ${it.c.rarity || ''}`.toLowerCase().includes(f);
     });
     let html = '';
-    let rhHead = false;
     for (const it of list) {
-      if (it.rh && !rhHead) { html += '<h3>Reverse holo varianty</h3>'; rhHead = true; }
       const own = m.own.has(it.key);
       html += `<label class="mrow${own ? ' own' : ''}" data-k="${esc(it.key)}">
         <input type="checkbox"${own ? ' checked' : ''}>
@@ -340,14 +343,14 @@
   }
 
   function drawMasterView() {
-    const items = masterItems();
+    const slots = masterSlots();
+    const items = slots.filter((i) => !i.none);
     drawSummary(items);
     if (!items.length) $('mview').innerHTML = '<p class="empty">Tento set nemá žiadne karty na zobrazenie.</p>';
-    else if (state.m.view === 'binder') drawBinder(items);
+    else if (state.m.view === 'binder') drawBinder(slots);
     else drawList(items);
     $('mvB').setAttribute('aria-pressed', String(state.m.view === 'binder'));
     $('mvL').setAttribute('aria-pressed', String(state.m.view === 'list'));
-    $('mper').hidden = state.m.view !== 'binder';
   }
 
   function toggleOwned(key) {
@@ -370,8 +373,6 @@
   function renderMaster() {
     if (!state.m) mInit();
     const m = state.m;
-    const canRh = rhPossible();
-    if (!canRh) m.rh = false;
     $('pane').innerHTML = `
       <div id="msum"></div>
       <div class="mbar">
@@ -379,21 +380,11 @@
           <button type="button" id="mvB">Binder</button>
           <button type="button" id="mvL">Zoznam</button>
         </div>
-        <select id="mper" aria-label="Veľkosť strany binderu">
-          <option value="9">Strana 3×3</option>
-          <option value="12">Strana 4×3</option>
-        </select>
-        ${canRh ? `<label class="chk" title="Odhad: Common, Uncommon a Rare majú reverse holo variant"><input type="checkbox" id="mrh"${m.rh ? ' checked' : ''}> Aj reverse holo</label>` : ''}
         <button type="button" class="ghost" id="mreset">Vynulovať</button>
       </div>
       <div id="mview"></div>`;
-    $('mper').value = String(m.per);
     $('mvB').onclick = () => { m.view = 'binder'; mPersist(); drawMasterView(); };
     $('mvL').onclick = () => { m.view = 'list'; mPersist(); drawMasterView(); };
-    $('mper').onchange = (e) => { m.per = Number(e.target.value) === 12 ? 12 : 9; m.page = 0; mPersist(); drawMasterView(); };
-    if (canRh) {
-      $('mrh').onchange = (e) => { m.rh = e.target.checked; m.page = 0; mPersist(); drawMasterView(); };
-    }
     $('mreset').onclick = () => {
       if (!m.own.size || !confirm('Vynulovať všetky označené karty v tomto sete?')) return;
       m.own.clear();
@@ -414,7 +405,7 @@
 
   // pri zmene šírky okna (mobil/desktop) sa binder prekreslí z dvoch strán na jednu a naopak
   window.matchMedia('(min-width: 760px)').addEventListener('change', () => {
-    if (state.tab === 'master' && state.m && state.m.view === 'binder' && $('mview')) drawBinder(masterItems());
+    if (state.tab === 'master' && state.m && state.m.view === 'binder' && $('mview')) drawBinder(masterSlots());
   });
   document.addEventListener('keydown', (e) => {
     if (state.tab !== 'master' || !state.m || state.m.view !== 'binder' || $('detail').hidden) return;

@@ -121,7 +121,9 @@
   .bpage .pn { grid-column: 1 / -1; text-align: center; color: #8d99b8; font-size: .8rem; }
   .slot { position: relative; display: grid; gap: 3px; border: 0; padding: 6px 6px 4px; border-radius: 8px; background: rgba(255, 255, 255, .05); color: #dfe5f5; font: inherit; cursor: pointer; text-align: center; align-content: start; min-width: 0; }
   .slot img, .slot .ph { width: 100%; aspect-ratio: 5 / 7; object-fit: contain; border-radius: 5px; background: #222b4a; transition: filter .15s, opacity .15s; }
-  .slot:not(.own) img { filter: grayscale(1); opacity: .32; }
+  .slot.rh { background: linear-gradient(135deg, rgba(120, 140, 255, .22), rgba(255, 120, 220, .16)); }
+  .slot.none { background: transparent; border: 1px dashed rgba(255, 255, 255, .15); cursor: default; opacity: .6; }
+  .slot.none .ph { background: transparent; }
   .slot.own { background: rgba(70, 209, 154, .14); box-shadow: inset 0 0 0 2px #46d19a; }
   .slot.own::after { content: '✓'; position: absolute; top: 9px; right: 9px; width: 20px; height: 20px; border-radius: 50%; background: #1b8a5a; color: #fff; font-size: .8rem; line-height: 20px; font-weight: 800; }
   .slot .sn { font-size: .72rem; font-weight: 800; color: #ffc21a; }
