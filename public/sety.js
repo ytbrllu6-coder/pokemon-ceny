@@ -11,7 +11,7 @@
   };
   const num = (n) => parseInt(String(n).replace(/\D+/g, ''), 10) || 0;
 
-  const state = { sets: [], loaded: false, cur: null, tab: 'cards', cards: null, products: null };
+  const state = { sets: [], loaded: false, cur: null, tab: 'cards', cards: null, products: null, m: null };
 
   async function api(path) {
     const res = await fetch(path);
@@ -56,14 +56,15 @@
   }
 
   // ---------- detail setu ----------
-  async function openSet(id) {
+  async function openSet(id, tab) {
     $('list').hidden = true;
     document.querySelector('.hero').hidden = true;
     $('detail').hidden = false;
     state.cur = null;
     state.cards = null;
     state.products = null;
-    state.tab = 'cards';
+    state.m = null;
+    state.tab = tab === 'master' ? 'master' : 'cards';
     $('detail').innerHTML = '<a class="back" href="#">← Všetky sety</a><div class="skel"></div>';
     window.scrollTo(0, 0);
     try {
@@ -95,11 +96,20 @@
       <div class="tabs" role="tablist">
         <button role="tab" id="tabCards" aria-selected="${state.tab === 'cards'}">Karty (${state.cards.cards.length})</button>
         <button role="tab" id="tabProd" aria-selected="${state.tab === 'prod'}">Produkty</button>
+        <button role="tab" id="tabMaster" aria-selected="${state.tab === 'master'}">Master set</button>
       </div>
       <div id="pane"></div>`;
-    $('tabCards').onclick = () => { state.tab = 'cards'; renderDetail(); };
-    $('tabProd').onclick = () => { state.tab = 'prod'; renderDetail(); };
+    const go = (tab) => {
+      state.tab = tab;
+      // odkaz na záložku sa dá zdieľať (#id/master); replaceState nespúšťa hashchange, takže set sa nenačíta znova
+      try { history.replaceState(null, '', '#' + encodeURIComponent(state.cur.id) + (tab === 'master' ? '/master' : '')); } catch { /* bez zmeny adresy */ }
+      renderDetail();
+    };
+    $('tabCards').onclick = () => go('cards');
+    $('tabProd').onclick = () => go('prod');
+    $('tabMaster').onclick = () => go('master');
     if (state.tab === 'cards') renderCards();
+    else if (state.tab === 'master') renderMaster();
     else renderProducts();
   }
 
@@ -143,6 +153,266 @@
     draw();
   }
 
+  // ---------- master set: zoznam celého setu + virtuálny binder ----------
+  // Čo kartu máš sa ukladá v prehliadači (localStorage), samostatne pre každý set.
+  const MKEY = 'pokeceny.master';
+  const mload = () => {
+    try {
+      const d = JSON.parse(localStorage.getItem(MKEY) || '{}');
+      return d && typeof d === 'object' ? d : {};
+    } catch { return {}; }
+  };
+  const msave = (d) => { try { localStorage.setItem(MKEY, JSON.stringify(d)); } catch { /* bez ukladania */ } };
+
+  function mInit() {
+    const store = mload();
+    const rec = (store.sets || {})[state.cur.id] || {};
+    state.m = {
+      own: new Set(Array.isArray(rec.own) ? rec.own : []),
+      rh: !!rec.rh,
+      view: store.view === 'list' ? 'list' : 'binder',
+      per: store.per === 12 ? 12 : 9,
+      page: 0,
+      filter: 'all',
+      q: '',
+    };
+  }
+
+  function mPersist() {
+    const store = mload();
+    store.sets = store.sets || {};
+    store.sets[state.cur.id] = { own: [...state.m.own], rh: state.m.rh };
+    store.view = state.m.view;
+    store.per = state.m.per;
+    msave(store);
+  }
+
+  // poradie kariet: najprv čisto číselné (1, 2, 3 …), potom s predponou (TG01, GG01 …)
+  const splitNum = (n) => {
+    const m = String(n).match(/^([A-Za-z]*)(\d+)/);
+    return m ? [m[1], parseInt(m[2], 10)] : [String(n), 0];
+  };
+  const cmpNum = (a, b) => {
+    const [pa, na] = splitNum(a.number);
+    const [pb, nb] = splitNum(b.number);
+    if (pa !== pb) return pa === '' ? -1 : pb === '' ? 1 : pa.localeCompare(pb);
+    return na - nb || String(a.number).localeCompare(String(b.number));
+  };
+
+  // Reverse holo: ak má karta cenu reverse holo, určite existuje; inak odhad podľa rarity (Common, Uncommon, Rare)
+  const RH_RARITIES = new Set(['Common', 'Uncommon', 'Rare']);
+  const rhEligible = (c) => c.reverse > 0 || RH_RARITIES.has(c.rarity);
+  const rhPossible = () => {
+    const y = parseInt(String(state.cur.date || '').slice(0, 4), 10);
+    return state.cards.cards.some((c) => c.reverse > 0) || (y >= 2002 && state.cards.cards.some((c) => RH_RARITIES.has(c.rarity)));
+  };
+
+  function masterItems() {
+    const sorted = [...state.cards.cards].sort(cmpNum);
+    const items = sorted.map((c) => ({ key: c.id, c, rh: false, price: c.avg30 || null }));
+    if (state.m.rh) {
+      for (const c of sorted) if (rhEligible(c)) items.push({ key: c.id + ':rh', c, rh: true, price: c.reverse || null });
+    }
+    return items;
+  }
+
+  function mStats(items) {
+    const own = state.m.own;
+    const st = { total: items.length, have: 0, haveVal: 0, missVal: 0, noPrice: 0, rar: new Map() };
+    for (const it of items) {
+      const has = own.has(it.key);
+      if (has) { st.have++; st.haveVal += it.price || 0; } else st.missVal += it.price || 0;
+      if (!it.price) st.noPrice++;
+      const r = it.rh ? 'Reverse holo' : (it.c.rarity || 'Neznáma rarita');
+      const g = st.rar.get(r) || { n: 0, have: 0 };
+      g.n++;
+      if (has) g.have++;
+      st.rar.set(r, g);
+    }
+    return st;
+  }
+
+  function drawSummary(items) {
+    const st = mStats(items);
+    const pct = st.total ? Math.floor((st.have / st.total) * 100) : 0;
+    const total = state.cur.total;
+    const base = items.filter((i) => !i.rh);
+    const extra = total ? base.filter((i) => { const [p, n] = splitNum(i.c.number); return p !== '' || n > total; }).length : 0;
+    $('msum').innerHTML = `
+      <div class="mprog" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${pct}"><div class="mfill" style="width:${pct}%"></div></div>
+      <div class="mnums"><b>${st.have} / ${st.total}</b> <span>${pct} % hotovo</span>
+        <span>Hodnota tvojich kariet: ${eur.format(st.haveVal)}</span>
+        <span>Dokúpiť zhruba: ${eur.format(st.missVal)}</span></div>
+      <p class="note">${total ? `Set má ${esc(total)} očíslovaných kariet${extra ? `, master set ich má ${base.length} (vrátane ${extra} secret rare a špeciálnych nad toto číslovanie)` : ''}. ` : ''}Ceny sú 30-dňový priemer z Cardmarketu${st.noPrice ? `; u ${st.noPrice} kariet cena chýba, do súčtov sa nepočíta` : ''}.</p>
+      <div class="chips">${[...st.rar].map(([r, g]) => `<span class="chip${g.have === g.n ? ' done' : ''}">${esc(r)} ${g.have}/${g.n}</span>`).join('')}</div>`;
+  }
+
+  const slotImg = (c) => (c.image ? `<img src="${esc(c.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : '<span class="ph"></span>');
+
+  function drawBinder(items) {
+    const m = state.m;
+    const spread = window.matchMedia('(min-width: 760px)').matches;
+    const pages = Math.max(1, Math.ceil(items.length / m.per));
+    m.page = Math.min(Math.max(0, m.page), pages - 1);
+    if (spread) m.page -= m.page % 2;
+    const step = spread ? 2 : 1;
+    const cols = m.per === 12 ? 4 : 3;
+    const pageHtml = (p) => {
+      if (p >= pages) return '<div class="bpage blank"></div>';
+      const slice = items.slice(p * m.per, (p + 1) * m.per);
+      const slots = slice.map((it) => {
+        const own = m.own.has(it.key);
+        const label = `${it.c.name} #${it.c.number}${it.rh ? ' (reverse holo)' : ''}`;
+        return `<button type="button" class="slot${own ? ' own' : ''}${it.rh ? ' rh' : ''}" data-k="${esc(it.key)}" aria-pressed="${own}" aria-label="${esc(label)}" title="${esc(label)}${it.price ? ' · ' + eur.format(it.price) : ''}">
+          ${slotImg(it.c)}<span class="sn">#${esc(it.c.number)}${it.rh ? ' RH' : ''}</span><span class="sname">${esc(it.c.name)}</span></button>`;
+      });
+      for (let i = slice.length; i < m.per; i++) slots.push('<span class="slot void"><span class="ph"></span><span class="sn">&nbsp;</span><span class="sname">&nbsp;</span></span>');
+      return `<div class="bpage c${cols}">${slots.join('')}<span class="pn">Strana ${p + 1} z ${pages}</span></div>`;
+    };
+    const opts = [];
+    for (let p = 0; p < pages; p += step) {
+      const first = items[p * m.per], last = items[Math.min(items.length, (p + step) * m.per) - 1];
+      opts.push(`<option value="${p}"${p === m.page ? ' selected' : ''}>Strana ${spread && p + 1 < pages ? `${p + 1}–${p + 2}` : p + 1} (#${esc(first.c.number)} – #${esc(last.c.number)})</option>`);
+    }
+    $('mview').innerHTML = `
+      <div class="bnav">
+        <button type="button" id="bprev"${m.page <= 0 ? ' disabled' : ''} aria-label="Predchádzajúca strana">←</button>
+        <select id="bjump" aria-label="Prejsť na stranu">${opts.join('')}</select>
+        <button type="button" id="bnext"${m.page + step >= pages ? ' disabled' : ''} aria-label="Ďalšia strana">→</button>
+      </div>
+      <div class="binder${spread ? ' spread' : ''}">${spread ? pageHtml(m.page) + pageHtml(m.page + 1) : pageHtml(m.page)}</div>
+      <p class="note" style="margin-top:12px">Kliknutím na kartu ju označíš, že ju máš. Sivé karty ešte chýbajú. Šípky na klávesnici listujú stranami.</p>`;
+    const turn = (to) => { m.page = to; drawBinder(masterItems()); };
+    $('bprev').onclick = () => turn(m.page - step);
+    $('bnext').onclick = () => turn(m.page + step);
+    $('bjump').onchange = (e) => turn(Number(e.target.value));
+  }
+
+  function drawList(items) {
+    const m = state.m;
+    $('mview').innerHTML = `
+      <div class="tools">
+        <input id="mq" type="search" placeholder="Hľadať kartu v zozname" autocomplete="off" value="${esc(m.q)}">
+        <select id="mf" aria-label="Filter">
+          <option value="all">Všetky</option>
+          <option value="own">Mám</option>
+          <option value="missing">Chýbajú</option>
+        </select>
+      </div>
+      <div id="mrows" class="mrows"></div>`;
+    $('mf').value = m.filter;
+    $('mq').oninput = (e) => { m.q = e.target.value; drawRows(); };
+    $('mf').onchange = (e) => { m.filter = e.target.value; drawRows(); };
+    drawRows();
+  }
+
+  function drawRows() {
+    const m = state.m;
+    const f = m.q.trim().toLowerCase();
+    const list = masterItems().filter((it) => {
+      const own = m.own.has(it.key);
+      if (m.filter === 'own' && !own) return false;
+      if (m.filter === 'missing' && own) return false;
+      return !f || `${it.c.name} ${it.c.number} ${it.c.rarity || ''}`.toLowerCase().includes(f);
+    });
+    let html = '';
+    let rhHead = false;
+    for (const it of list) {
+      if (it.rh && !rhHead) { html += '<h3>Reverse holo varianty</h3>'; rhHead = true; }
+      const own = m.own.has(it.key);
+      html += `<label class="mrow${own ? ' own' : ''}" data-k="${esc(it.key)}">
+        <input type="checkbox"${own ? ' checked' : ''}>
+        ${slotImg(it.c)}
+        <span><b>${esc(it.c.name)}${it.rh ? ' (reverse holo)' : ''}</b><small>#${esc(it.c.number)}${it.c.rarity ? ' · ' + esc(it.c.rarity) : ''}</small></span>
+        <span class="mp">${it.price ? eur.format(it.price) : '<small>bez ceny</small>'}</span></label>`;
+    }
+    $('mrows').innerHTML = html || '<p class="empty">Žiadna karta nesedí na filter.</p>';
+  }
+
+  function drawMasterView() {
+    const items = masterItems();
+    drawSummary(items);
+    if (!items.length) $('mview').innerHTML = '<p class="empty">Tento set nemá žiadne karty na zobrazenie.</p>';
+    else if (state.m.view === 'binder') drawBinder(items);
+    else drawList(items);
+    $('mvB').setAttribute('aria-pressed', String(state.m.view === 'binder'));
+    $('mvL').setAttribute('aria-pressed', String(state.m.view === 'list'));
+    $('mper').hidden = state.m.view !== 'binder';
+  }
+
+  function toggleOwned(key) {
+    const m = state.m;
+    if (m.own.has(key)) m.own.delete(key);
+    else m.own.add(key);
+    mPersist();
+    const has = m.own.has(key);
+    drawSummary(masterItems());
+    if (m.view === 'list' && m.filter !== 'all') { drawRows(); return; }
+    for (const el of $('mview').querySelectorAll('[data-k]')) {
+      if (el.dataset.k !== key) continue;
+      el.classList.toggle('own', has);
+      if (el.matches('.slot')) el.setAttribute('aria-pressed', String(has));
+      const box = el.querySelector('input');
+      if (box) box.checked = has;
+    }
+  }
+
+  function renderMaster() {
+    if (!state.m) mInit();
+    const m = state.m;
+    const canRh = rhPossible();
+    if (!canRh) m.rh = false;
+    $('pane').innerHTML = `
+      <div id="msum"></div>
+      <div class="mbar">
+        <div class="seg" role="group" aria-label="Zobrazenie">
+          <button type="button" id="mvB">Binder</button>
+          <button type="button" id="mvL">Zoznam</button>
+        </div>
+        <select id="mper" aria-label="Veľkosť strany binderu">
+          <option value="9">Strana 3×3</option>
+          <option value="12">Strana 4×3</option>
+        </select>
+        ${canRh ? `<label class="chk" title="Odhad: Common, Uncommon a Rare majú reverse holo variant"><input type="checkbox" id="mrh"${m.rh ? ' checked' : ''}> Aj reverse holo</label>` : ''}
+        <button type="button" class="ghost" id="mreset">Vynulovať</button>
+      </div>
+      <div id="mview"></div>`;
+    $('mper').value = String(m.per);
+    $('mvB').onclick = () => { m.view = 'binder'; mPersist(); drawMasterView(); };
+    $('mvL').onclick = () => { m.view = 'list'; mPersist(); drawMasterView(); };
+    $('mper').onchange = (e) => { m.per = Number(e.target.value) === 12 ? 12 : 9; m.page = 0; mPersist(); drawMasterView(); };
+    if (canRh) {
+      $('mrh').onchange = (e) => { m.rh = e.target.checked; m.page = 0; mPersist(); drawMasterView(); };
+    }
+    $('mreset').onclick = () => {
+      if (!m.own.size || !confirm('Vynulovať všetky označené karty v tomto sete?')) return;
+      m.own.clear();
+      mPersist();
+      drawMasterView();
+    };
+    // jeden poslucháč pre kliknutia na karty v binderi aj v zozname
+    $('mview').onclick = (e) => {
+      const slot = e.target.closest('.slot[data-k]');
+      if (slot) toggleOwned(slot.dataset.k);
+    };
+    $('mview').onchange = (e) => {
+      const row = e.target.closest('.mrow[data-k]');
+      if (row && e.target.matches('input[type="checkbox"]')) toggleOwned(row.dataset.k);
+    };
+    drawMasterView();
+  }
+
+  // pri zmene šírky okna (mobil/desktop) sa binder prekreslí z dvoch strán na jednu a naopak
+  window.matchMedia('(min-width: 760px)').addEventListener('change', () => {
+    if (state.tab === 'master' && state.m && state.m.view === 'binder' && $('mview')) drawBinder(masterItems());
+  });
+  document.addEventListener('keydown', (e) => {
+    if (state.tab !== 'master' || !state.m || state.m.view !== 'binder' || $('detail').hidden) return;
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+    const btn = e.key === 'ArrowLeft' ? $('bprev') : e.key === 'ArrowRight' ? $('bnext') : null;
+    if (btn && !btn.disabled) btn.click();
+  });
+
   // ---------- produkty ----------
   async function renderProducts() {
     const q = state.cur.name.split(':')[0].trim();
@@ -165,8 +435,9 @@
 
   // ---------- smerovanie ----------
   function route() {
-    const id = decodeURIComponent(location.hash.replace(/^#/, ''));
-    if (id) openSet(id);
+    // #id alebo #id/master (id setu neobsahuje lomku)
+    const [id, tab] = decodeURIComponent(location.hash.replace(/^#/, '')).split('/');
+    if (id) openSet(id, tab);
     else closeSet();
   }
   document.addEventListener('click', (e) => {

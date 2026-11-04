@@ -82,7 +82,7 @@ async function dexCards(dexId) {
   const d = await getJson(`${TCGDEX}/sets/${encodeURIComponent(dexId)}`);
   return (d.cards || []).map((c) => ({
     id: 'tcgdex:' + c.id, name: c.name, number: String(c.localId ?? ''), rarity: null,
-    image: c.image ? `${c.image}/low.webp` : null, avg30: null, trend: null, updated: null, cmUrl: null,
+    image: c.image ? `${c.image}/low.webp` : null, avg30: null, reverse: null, trend: null, updated: null, cmUrl: null,
   }));
 }
 
@@ -98,7 +98,9 @@ async function pool(items, size, fn) {
 
 function applyPricing(card, detail) {
   const cm = detail?.pricing?.cardmarket;
-  if (!cm || !(cm.avg30 > 0)) return;
+  if (!cm) return;
+  if (cm['avg30-holo'] > 0) card.reverse = cm['avg30-holo'];
+  if (!(cm.avg30 > 0)) return;
   card.avg30 = cm.avg30;
   card.trend = cm.trend > 0 ? cm.trend : card.trend;
   card.updated = cm.updated ? String(cm.updated).slice(0, 10) : card.updated;
@@ -137,7 +139,7 @@ async function setCards(id) {
       const json = await getJson(`${PTCG}/cards?q=${encodeURIComponent('set.id:' + id)}&pageSize=250&select=id,name,number,rarity,set,cardmarket,images`);
       const cards = (json.data || []).map((c) => {
         const n = normCard(c);
-        return { id: n.id, name: n.name, number: n.number, rarity: n.rarity, image: n.image, avg30: n.avg30, trend: n.trend, updated: n.updated, cmUrl: n.cmUrl };
+        return { id: n.id, name: n.name, number: n.number, rarity: n.rarity, image: n.image, avg30: n.avg30, reverse: n.reverseAvg30, trend: n.trend, updated: n.updated, cmUrl: n.cmUrl };
       });
       if (cards.length) result = { set, cards, source: 'pokemontcg' };
     } catch { /* skúsime zálohu */ }

@@ -82,6 +82,54 @@
   .prod a.title { text-decoration: none; }
   .empty { text-align: center; color: var(--muted); padding: 30px 0; }
   .skel { background: var(--surface); border-radius: 12px; height: 120px; margin-bottom: 12px; }
+
+  .tabs { overflow-x: auto; }
+  .tabs button { white-space: nowrap; }
+
+  /* Master set: súhrn, binder, zoznam */
+  .mprog { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; }
+  .mfill { height: 100%; background: var(--stock); border-radius: 99px; transition: width .25s; }
+  .mnums { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: baseline; margin: 8px 0 4px; }
+  .mnums b { font-size: 1.25rem; }
+  .mnums span { color: var(--muted); font-size: .92rem; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 14px; }
+  .chip { font-size: .8rem; font-weight: 700; padding: 3px 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); }
+  .chip.done { border-color: var(--stock); color: var(--stock); }
+  .mbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 0 0 14px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  .seg button { border: 0; background: none; color: var(--muted); font: inherit; font-weight: 700; padding: 8px 14px; cursor: pointer; }
+  .seg button[aria-pressed="true"] { background: var(--action); color: var(--action-ink); }
+  .chk { display: flex; align-items: center; gap: 6px; font-size: .92rem; }
+  .mbar select, .bnav select { font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+  .ghost { border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 8px; padding: 8px 12px; font: inherit; font-size: .88rem; cursor: pointer; margin-left: auto; }
+  .ghost:hover { border-color: var(--action); color: var(--action); }
+
+  .bnav { display: flex; gap: 10px; align-items: center; justify-content: center; margin: 0 0 12px; }
+  .bnav button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 8px 14px; font: inherit; font-weight: 700; cursor: pointer; }
+  .bnav button:disabled { opacity: .4; cursor: default; }
+  .binder { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .binder.spread { grid-template-columns: 1fr 1fr; } }
+  .bpage { background: #141b33; border-radius: 12px; padding: 14px; display: grid; gap: 10px; align-content: start; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .06), var(--shadow); }
+  .bpage.c3 { grid-template-columns: repeat(3, 1fr); }
+  .bpage.c4 { grid-template-columns: repeat(4, 1fr); }
+  .bpage.blank { background: transparent; box-shadow: none; }
+  .bpage .pn { grid-column: 1 / -1; text-align: center; color: #8d99b8; font-size: .8rem; }
+  .slot { position: relative; display: grid; gap: 3px; border: 0; padding: 6px 6px 4px; border-radius: 8px; background: rgba(255, 255, 255, .05); color: #dfe5f5; font: inherit; cursor: pointer; text-align: center; align-content: start; min-width: 0; }
+  .slot img, .slot .ph { width: 100%; aspect-ratio: 5 / 7; object-fit: contain; border-radius: 5px; background: #222b4a; transition: filter .15s, opacity .15s; }
+  .slot:not(.own) img { filter: grayscale(1); opacity: .32; }
+  .slot.own { background: rgba(70, 209, 154, .14); box-shadow: inset 0 0 0 2px #46d19a; }
+  .slot.own::after { content: '✓'; position: absolute; top: 9px; right: 9px; width: 20px; height: 20px; border-radius: 50%; background: #1b8a5a; color: #fff; font-size: .8rem; line-height: 20px; font-weight: 800; }
+  .slot .sn { font-size: .72rem; font-weight: 800; color: #ffc21a; }
+  .slot .sname { font-size: .68rem; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85; }
+  .slot.void { visibility: hidden; }
+
+  .mrow { display: grid; grid-template-columns: auto 40px 1fr auto; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .mrow img, .mrow .ph { width: 40px; aspect-ratio: 5 / 7; object-fit: contain; border-radius: 4px; background: var(--line); }
+  .mrow small { display: block; color: var(--muted); }
+  .mrow .mp { font-weight: 800; color: var(--stock); }
+  .mrow input { width: 20px; height: 20px; accent-color: var(--stock); }
+  .mrow.own b { color: var(--stock); }
+  .mrows h3 { margin: 18px 0 4px; font-size: .95rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 </style>
 </head>
 <body>
