@@ -136,7 +136,9 @@
           <option value="name">Podľa názvu</option>
         </select>
       </div>
-      <p class="note">${source === 'tcgdex'
+      <p class="note">${source === 'manual'
+        ? 'Nový set: zoznam kariet je zadaný ručne, obrázky a ceny sa doplnia, len čo ich zdroje dát pridajú. Karty si môžeš už teraz odklikávať v Master set guide.'
+        : source === 'tcgdex'
         ? 'Ceny teraz nie sú dostupné (záložný zdroj). Kliknutím na kartu zistíš cenu v sekcii Karty.'
         : source === 'tcgdex+ceny' ? `Ceny: 30-dňový priemer z Cardmarketu (TCGdex)${dates.length ? ', stav k ' + esc(fmtDate(dates[dates.length - 1])) : ''}. Ak niektorým kartám cena chýba, otvor set znova, doplnia sa.`
         : `Ceny: 30-dňový priemer z Cardmarketu${dates.length ? ', stav k ' + esc(fmtDate(dates[dates.length - 1])) : ''}. Pri nových setoch cena chýba a pri niektorých môže byť zastaraná.`}</p>
@@ -190,7 +192,7 @@
 
   // Reverse holo: ak má karta cenu reverse holo, určite existuje; inak odhad podľa rarity (Common, Uncommon, Rare)
   const RH_RARITIES = new Set(['Common', 'Uncommon', 'Rare']);
-  const rhEligible = (c) => c.reverse > 0 || RH_RARITIES.has(c.rarity);
+  const rhEligible = (c) => c.reverse > 0 || (!c.noRh && RH_RARITIES.has(c.rarity));
   // Duplicate EX sa týka len bežných ex kariet (Double Rare, staré Rare Holo EX); full arty, Illustration Rare a Special Illustration Rare sa nezdvojujú
   const isEx = (c) => c.rarity === 'Double Rare' || /^Rare Holo EX/i.test(c.rarity || '') || (!c.rarity && /(^|[\s-])ex$/i.test(c.name || ''));
   const rhPossible = () => {

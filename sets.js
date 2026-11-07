@@ -66,7 +66,32 @@ function normSetDex(s) {
   };
 }
 
+// Sety, ktoré vyšli, ale zdroje dát ich ešte nemajú. Len čo ich zdroj pridá, použijú sa jeho dáta (podľa názvu setu).
+const fs = require('fs');
+const path = require('path');
+const MANUAL_SETS = [
+  { id: 'manual:me6', name: 'Delta Reign', series: 'Mega Evolution', total: 103, date: '2026/11/06', code: 'ME6', file: 'delta-reign.txt' },
+];
+
+function manualCards(set) {
+  const lines = fs.readFileSync(path.join(__dirname, 'data', set.file), 'utf8').split('\n').filter(Boolean);
+  return lines.map((l) => {
+    const [number, name, rarity, flag] = l.split('|');
+    return { id: `${set.id}-${number}`, name, number, rarity, image: null, avg30: null, reverse: null, noRh: flag === 'norh', trend: null, updated: null, cmUrl: null };
+  });
+}
+
+function withManualSets(res) {
+  const have = new Set(res.sets.map((s) => flat(s.name)));
+  const extra = MANUAL_SETS.filter((m) => !have.has(flat(m.name))).map(({ file, ...m }) => ({ ...m, logo: null, symbol: null }));
+  return extra.length ? { ...res, sets: [...extra, ...res.sets] } : res;
+}
+
 async function listSets() {
+  return withManualSets(await listSetsRaw());
+}
+
+async function listSetsRaw() {
   try {
     const json = await getJson(`${PTCG}/sets?orderBy=-releaseDate&pageSize=250&select=id,name,series,printedTotal,total,releaseDate,ptcgoCode,images`);
     const sets = (json.data || []).map(normSetPtcg);
@@ -142,7 +167,21 @@ async function setCards(id) {
   const { sets } = await listSets();
   const set = sets.find((s) => s.id === id) || { id, name: id, series: '', total: null, date: null, logo: null, symbol: null, code: null };
   let result = null;
-  if (id.startsWith('tcgdex:')) {
+  if (id.startsWith('manual:')) {
+    const def = MANUAL_SETS.find((m) => m.id === id);
+    if (!def) throw new Error('neznámy set');
+    const mine = manualCards(def);
+    result = { set, cards: mine, source: 'manual' };
+    try {   // ak už set pozná TCGdex, vezmeme od neho obrázky (ceny sa doplnia nižšie); rarity ostávajú z nášho zoznamu
+      const dex = await getJson(`${TCGDEX}/sets`);
+      const match = (Array.isArray(dex) ? dex : []).find((d) => flat(d.name) === flat(def.name));
+      if (match) {
+        const img = new Map((await dexCards(match.id)).map((c) => [normNum(c.number), c.image]));
+        for (const c of mine) c.image = img.get(normNum(c.number)) || null;
+        result.source = 'tcgdex';
+      }
+    } catch { /* ostaneme pri vlastnom zozname */ }
+  } else if (id.startsWith('tcgdex:')) {
     result = { set, cards: await dexCards(id.slice(7)), source: 'tcgdex' };
   } else {
     try {

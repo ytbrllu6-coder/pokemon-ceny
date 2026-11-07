@@ -1,0 +1,141 @@
+1|Heracross|Common
+2|Surskit|Common
+3|Masquerain|Common
+4|Cacnea|Common
+5|Cacturne|Rare
+6|Combee|Common
+7|Vespiquen|Common
+8|Shaymin|Uncommon
+9|Virizion|Uncommon
+10|Wimpod|Common
+11|Mega Golisopod ex|Double Rare
+12|Sprigatito|Common
+13|Floragato|Uncommon
+14|Meowscarada ex|Double Rare
+15|Smoliv|Common
+16|Dolliv|Common
+17|Arboliva|Uncommon
+18|Growlithe|Common
+19|Arcanine|Rare
+20|Magmar|Uncommon
+21|Magmortar|Rare
+22|Torkoal|Common
+23|Heat Rotom ex|Double Rare
+24|Heatmor|Common
+25|Mantine|Common
+26|Kyogre|Rare
+27|Frillish|Common
+28|Jellicent|Uncommon
+29|Wishiwashi ex|Double Rare
+30|Electabuzz|Common
+31|Electivire|Uncommon
+32|Jolteon|Uncommon
+33|Raikou ex|Double Rare
+34|Rotom|Common
+35|Thundurus|Uncommon
+36|Pincurchin|Common
+37|Pawmi|Common
+38|Pawmo|Common
+39|Pawmot|Uncommon
+40|Wattrel|Common
+41|Kilowattrel|Uncommon
+42|Miraidon|Uncommon
+43|Drowzee|Common
+44|Hypno|Common
+45|Giratina|Rare
+46|Golett|Common
+47|Mega Golurk ex|Double Rare
+48|Enamorus|Uncommon
+49|Sandshrew|Common
+50|Sandslash|Common
+51|Onix|Common
+52|Steelix|Rare
+53|Groudon|Rare
+54|Landorus|Uncommon
+55|Nidoran♀|Common
+56|Nidorina|Common
+57|Nidoqueen|Rare
+58|Spinarak|Common
+59|Ariados|Common
+60|Sableye|Common
+61|Carvanha|Common
+62|Sharpedo|Common
+63|Darkrai|Uncommon
+64|Purrloin|Common
+65|Liepard|Common
+66|Zorua|Common
+67|Zoroark ex|Double Rare
+68|Inkay|Common
+69|Mega Malamar ex|Double Rare
+70|Morpeko|Uncommon
+71|Zarude|Uncommon
+72|Druddigon|Uncommon
+73|Jangmo-o|Common
+74|Hakamo-o|Common
+75|Kommo-o|Rare
+76|Cyclizar|Common
+77|Tauros|Common
+78|Eevee|Common
+79|Delibird|Uncommon
+80|Azurill|Common
+81|Swablu|Common
+82|Altaria|Rare
+83|Kecleon|Common
+84|Mega Rayquaza ex|Double Rare
+85|Tornadus|Uncommon
+86|Fletchling|Common
+87|Fletchinder|Common
+88|Talonflame ex|Double Rare
+89|Aarune|Uncommon
+90|Adventure Lantern I|Uncommon
+91|Custom Vest|Uncommon
+92|Emcee's Hype|Common
+93|Grisham|Uncommon
+94|Legendary Pyroduct|Uncommon|norh
+95|Legendary Pyroduct|Uncommon|norh
+96|Legendary Summit|Uncommon|norh
+97|Legendary Summit|Uncommon|norh
+98|Legendary Trench|Uncommon|norh
+99|Legendary Trench|Uncommon|norh
+100|Mega Rayquaza Cap|Uncommon
+101|Tasty Rice Ball I|Common
+102|Tate & Liza's Training|Uncommon
+103|Zinnia's Trust|Uncommon
+104|Masquerain|Illustration Rare
+105|Sprigatito|Illustration Rare
+106|Growlithe|Illustration Rare
+107|Magmortar|Illustration Rare
+108|Electivire|Illustration Rare
+109|Pincurchin|Illustration Rare
+110|Enamorus|Illustration Rare
+111|Groudon|Illustration Rare
+112|Zorua|Illustration Rare
+113|Inkay|Illustration Rare
+114|Eevee|Illustration Rare
+115|Azurill|Illustration Rare
+116|Altaria|Illustration Rare
+117|Kecleon|Illustration Rare
+118|Mega Golisopod ex|Ultra Rare
+119|Heat Rotom ex|Ultra Rare
+120|Wishiwashi ex|Ultra Rare
+121|Raikou ex|Ultra Rare
+122|Mega Golurk ex|Ultra Rare
+123|Mega Malamar ex|Ultra Rare
+124|Talonflame ex|Ultra Rare
+125|Aarune|Ultra Rare
+126|Adventure Lantern I|Ultra Rare
+127|Custom Vest|Ultra Rare
+128|Emcee's Hype|Ultra Rare
+129|Pokémon Catcher I|Ultra Rare
+130|Tate & Liza's Training|Ultra Rare
+131|Zinnia's Trust|Ultra Rare
+132|Bubbly Water Energy|Ultra Rare
+133|Growing Grass Energy|Ultra Rare
+134|Nitro Fire Energy|Ultra Rare
+135|Mega Golisopod ex|Special Illustration Rare
+136|Raikou ex|Special Illustration Rare
+137|Mega Golurk ex|Special Illustration Rare
+138|Mega Rayquaza ex|Special Illustration Rare
+139|Aarune|Special Illustration Rare
+140|Zinnia's Trust|Special Illustration Rare
+141|Mega Rayquaza ex|Mega Hyper Rare
