@@ -191,6 +191,8 @@
   // Reverse holo: ak má karta cenu reverse holo, určite existuje; inak odhad podľa rarity (Common, Uncommon, Rare)
   const RH_RARITIES = new Set(['Common', 'Uncommon', 'Rare']);
   const rhEligible = (c) => c.reverse > 0 || RH_RARITIES.has(c.rarity);
+  // Duplicate EX sa týka len bežných ex kariet (Double Rare, staré Rare Holo EX); full arty, Illustration Rare a Special Illustration Rare sa nezdvojujú
+  const isEx = (c) => c.rarity === 'Double Rare' || /^Rare Holo EX/i.test(c.rarity || '') || (!c.rarity && /(^|[\s-])ex$/i.test(c.name || ''));
   const rhPossible = () => {
     const y = parseInt(String(state.cur.date || '').slice(0, 4), 10);
     return state.cards.cards.some((c) => c.reverse > 0) || (y >= 2002 && state.cards.cards.some((c) => RH_RARITIES.has(c.rarity)));
@@ -234,7 +236,7 @@
       out.push({ key: c.id, c, rh: false, price: c.avg30 || null });
       if (!rhOn()) continue;
       if (rhEligible(c)) out.push({ key: c.id + ':rh', c, rh: true, price: c.reverse || null });
-      else if (state.m.dupe) out.push({ key: c.id + ':2', c, rh: false, copy: true, price: c.avg30 || null });
+      else if (state.m.dupe && isEx(c)) out.push({ key: c.id + ':2', c, rh: false, copy: true, price: c.avg30 || null });
     }
     return out;
   }
@@ -269,7 +271,7 @@
       <div class="mnums"><b>${st.have} / ${st.total}</b> <span>${pct} % hotovo</span>
         <span>Hodnota tvojich kariet: ${eur.format(st.haveVal)}</span>
         <span>Dokúpiť zhruba: ${eur.format(st.missVal)}</span></div>
-      <p class="note">${total ? `Set má ${esc(total)} očíslovaných kariet. ` : ''}Master set: ${base.length} kariet${extra ? ` (z toho ${extra} secret rare a špeciálnych nad číslovanie)` : ''}${nRh ? ` + ${nRh} reverse holo` : ''}${nCopy ? ` + ${nCopy} druhých kópií kariet bez reverse holo` : ''}. Ceny sú 30-dňový priemer z Cardmarketu${dates.length ? ', stav k ' + esc(fmtDate(dates[dates.length - 1])) : ''}${st.noPrice ? `; u ${st.noPrice} kariet cena chýba, do súčtov sa nepočíta` : ''}.</p>
+      <p class="note">${total ? `Set má ${esc(total)} očíslovaných kariet. ` : ''}Master set: ${base.length} kariet${extra ? ` (z toho ${extra} secret rare a špeciálnych nad číslovanie)` : ''}${nRh ? ` + ${nRh} reverse holo` : ''}${nCopy ? ` + ${nCopy} druhých kópií ex kariet` : ''}. Ceny sú 30-dňový priemer z Cardmarketu${dates.length ? ', stav k ' + esc(fmtDate(dates[dates.length - 1])) : ''}${st.noPrice ? `; u ${st.noPrice} kariet cena chýba, do súčtov sa nepočíta` : ''}.</p>
       <div class="chips">${[...st.rar].map(([r, g]) => `<span class="chip${g.have === g.n ? ' done' : ''}">${esc(r)} ${g.have}/${g.n}</span>`).join('')}</div>`;
   }
 
@@ -501,7 +503,7 @@
           <div class="seg" role="group" aria-label="Veľkosť binderu">${Object.keys(SIZES).map((k) => `<button type="button" data-size="${k}">${k.replace('x', '×')}</button>`).join('')}</div></div>
         ${m.hasRh ? `<div class="mgroup"><span class="mlabel">Zahrnúť karty</span>
           <div class="row"><button type="button" class="tog" id="trh">Reverse holo</button>
-          <button type="button" class="tog" id="tdup" title="Karty bez reverse holo (napr. ex) sa v binderi zdvoja. Vypnuté: hneď za nimi nasleduje ďalšia karta.">Duplicate EX</button></div></div>` : ''}
+          <button type="button" class="tog" id="tdup" title="Ex karty (bez reverse holo) sa v binderi zdvoja. Vypnuté: hneď za nimi nasleduje ďalšia karta.">Duplicate EX</button></div></div>` : ''}
         <div class="mgroup"><span class="mlabel">Ceny</span><div class="row"><button type="button" class="tog" id="tpr">Zobraziť ceny</button></div></div>
         <button type="button" class="ghost" id="mreset">Vynulovať</button>
       </div>
