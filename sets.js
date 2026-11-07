@@ -128,6 +128,16 @@ async function enrichPrices(set, cards) {
   });
 }
 
+// Doplní karty, ktoré pokemontcg.io pri (zvyčajne novom) sete ešte nemá, ale TCGdex ich pozná (podľa čísla karty).
+async function addMissingFromDex(set, cards) {
+  const dex = await getJson(`${TCGDEX}/sets`);
+  const match = (Array.isArray(dex) ? dex : []).find((d) => flat(d.name) === flat(set.name));
+  if (!match) return;
+  const have = new Set(cards.map((c) => normNum(c.number)));
+  const extra = (await dexCards(match.id)).filter((c) => !have.has(normNum(c.number)));
+  cards.push(...extra);
+}
+
 async function setCards(id) {
   const { sets } = await listSets();
   const set = sets.find((s) => s.id === id) || { id, name: id, series: '', total: null, date: null, logo: null, symbol: null, code: null };
@@ -136,12 +146,22 @@ async function setCards(id) {
     result = { set, cards: await dexCards(id.slice(7)), source: 'tcgdex' };
   } else {
     try {
-      const json = await getJson(`${PTCG}/cards?q=${encodeURIComponent('set.id:' + id)}&pageSize=250&select=id,name,number,rarity,set,cardmarket,images`);
-      const cards = (json.data || []).map((c) => {
+      // pokemontcg.io vracia max. 250 kariet na stranu, väčšie sety (secret rare) treba načítať po stranách
+      const raw = [];
+      for (let page = 1; page <= 4; page++) {
+        const json = await getJson(`${PTCG}/cards?q=${encodeURIComponent('set.id:' + id)}&pageSize=250&page=${page}&select=id,name,number,rarity,set,cardmarket,images`);
+        const part = json.data || [];
+        raw.push(...part);
+        if (!part.length || raw.length >= (json.totalCount || 0)) break;
+      }
+      const cards = raw.map((c) => {
         const n = normCard(c);
         return { id: n.id, name: n.name, number: n.number, rarity: n.rarity, image: n.image, avg30: n.avg30, reverse: n.reverseAvg30, trend: n.trend, updated: n.updated, cmUrl: n.cmUrl };
       });
-      if (cards.length) result = { set, cards, source: 'pokemontcg' };
+      if (cards.length) {
+        result = { set, cards, source: 'pokemontcg' };
+        await addMissingFromDex(set, cards).catch(() => {});   // pri novom sete môže pokemontcg.io mať len časť kariet
+      }
     } catch { /* skúsime zálohu */ }
     if (!result) {
       // záloha: set s rovnakým názvom v TCGdex
