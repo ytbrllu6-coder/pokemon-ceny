@@ -191,13 +191,14 @@
   };
 
   // Reverse holo: ak má karta cenu reverse holo, určite existuje; inak odhad podľa rarity (Common, Uncommon, Rare)
-  const RH_RARITIES = new Set(['Common', 'Uncommon', 'Rare']);
-  const rhEligible = (c) => c.reverse > 0 || (!c.noRh && RH_RARITIES.has(c.rarity));
+  const RH_RARITIES = new Set(['common', 'uncommon', 'rare']);
+  const rar = (c) => String(c.rarity || '').toLowerCase();
+  const rhEligible = (c) => c.reverse > 0 || (!c.noRh && RH_RARITIES.has(rar(c)));
   // Duplicate EX sa týka len bežných ex kariet (Double Rare, staré Rare Holo EX); full arty, Illustration Rare a Special Illustration Rare sa nezdvojujú
-  const isEx = (c) => c.rarity === 'Double Rare' || /^Rare Holo EX/i.test(c.rarity || '') || (!c.rarity && /(^|[\s-])ex$/i.test(c.name || ''));
+  const isEx = (c) => rar(c) === 'double rare' || /^rare holo ex/.test(rar(c)) || (!c.rarity && /(^|[\s-])ex$/i.test(c.name || ''));
   const rhPossible = () => {
     const y = parseInt(String(state.cur.date || '').slice(0, 4), 10);
-    return state.cards.cards.some((c) => c.reverse > 0) || (y >= 2002 && state.cards.cards.some((c) => RH_RARITIES.has(c.rarity)));
+    return state.cards.cards.some((c) => c.reverse > 0) || (y >= 2002 && state.cards.cards.some((c) => RH_RARITIES.has(rar(c))));
   };
 
   function mInit() {

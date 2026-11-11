@@ -122,6 +122,8 @@ async function pool(items, size, fn) {
 }
 
 function applyPricing(card, detail) {
+  if (!card.rarity && detail?.rarity) card.rarity = detail.rarity;
+  if (!card.image && detail?.image) card.image = `${detail.image}/low.webp`;
   const cm = detail?.pricing?.cardmarket;
   if (!cm) return;
   if (cm['avg30-holo'] > 0) card.reverse = cm['avg30-holo'];
@@ -208,6 +210,17 @@ async function setCards(id) {
       const match = (Array.isArray(dex) ? dex : []).find((d) => flat(d.name) === flat(set.name));
       if (!match) throw new Error('set sa nenašiel v zálohe');
       result = { set, cards: await dexCards(match.id), source: 'tcgdex' };
+    }
+  }
+  const man = MANUAL_SETS.find((m) => flat(m.name) === flat(set.name));
+  if (man && result.source !== 'manual') {
+    const mine = manualCards(man);
+    const byNum = new Map(result.cards.map((c) => [normNum(c.number), c]));
+    for (const m of mine) {
+      const c = byNum.get(normNum(m.number));
+      if (!c) { result.cards.push(m); continue; }
+      c.rarity = c.rarity || m.rarity;
+      if (m.noRh) c.noRh = true;
     }
   }
   const priced = result.cards.filter((c) => c.avg30).length;
