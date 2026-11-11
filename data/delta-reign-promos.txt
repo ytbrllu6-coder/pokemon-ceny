@@ -1,0 +1,8 @@
+MEP 111|Masquerain|mep-111-existing-en-20261030
+MEP 112|Magmortar|mep-112-existing-en-20261030
+MEP 113|Enamorus|mep-113-existing-en-20261030
+MEP 114|Kommo-o|mep-114-existing-en-20261030
+MEP 115|Spritzee|mep-115-official-en-20261106
+MEP 116|Seel|mep-116-existing-en-20261030
+MEP 117|Kyogre|mep-117-existing-en-20261030
+MEP 118|Mega Rayquaza ex|mep-118-mega-rayquaza-ex-en-20261030

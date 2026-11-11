@@ -70,7 +70,7 @@ function normSetDex(s) {
 const fs = require('fs');
 const path = require('path');
 const MANUAL_SETS = [
-  { id: 'manual:me6', name: 'Delta Reign', series: 'Mega Evolution', total: 103, date: '2026/11/06', code: 'ME6', file: 'delta-reign.txt',
+  { id: 'manual:me6', name: 'Delta Reign', series: 'Mega Evolution', total: 103, date: '2026/11/06', code: 'ME6', file: 'delta-reign.txt', promoFile: 'delta-reign-promos.txt',
     image: (n) => `https://pokecottagecdn.com/mastersets/images/cards/me6-delta-reign-${String(n).padStart(3, '0')}-official-en-20261030__large.webp` },
 ];
 
@@ -82,9 +82,18 @@ function manualCards(set) {
   });
 }
 
+// promo karty k setu (len pre ručne zadané sety); obrázok podľa vzoru z PokéCottage
+function manualPromos(set) {
+  if (!set.promoFile) return [];
+  return fs.readFileSync(path.join(__dirname, 'data', set.promoFile), 'utf8').split('\n').filter(Boolean).map((l) => {
+    const [number, name, img] = l.split('|');
+    return { id: `${set.id}-${number.replace(/\s+/g, '').toLowerCase()}`, name, number, rarity: 'Promo', image: `https://pokecottagecdn.com/mastersets/images/cards/me6-delta-reign-${img}__large.webp`, avg30: null, reverse: null, trend: null, updated: null, cmUrl: null };
+  });
+}
+
 function withManualSets(res) {
   const have = new Set(res.sets.map((s) => flat(s.name)));
-  const extra = MANUAL_SETS.filter((m) => !have.has(flat(m.name))).map(({ file, image, ...m }) => ({ ...m, logo: null, symbol: null }));
+  const extra = MANUAL_SETS.filter((m) => !have.has(flat(m.name))).map(({ file, image, promoFile, ...m }) => ({ ...m, logo: null, symbol: null }));
   return extra.length ? { ...res, sets: [...extra, ...res.sets] } : res;
 }
 
@@ -225,6 +234,7 @@ async function setCards(id) {
       if (m.noRh) c.noRh = true;
     }
   }
+  if (man && man.promoFile) result.promos = manualPromos(man);
   const priced = result.cards.filter((c) => c.avg30).length;
   if (result.cards.length && priced < result.cards.length * 0.8) {
     await enrichPrices(set, result.cards).catch(() => {});

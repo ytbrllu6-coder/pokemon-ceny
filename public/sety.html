@@ -175,6 +175,47 @@
   .mrow .mp { font-weight: 800; color: var(--stock); }
   .mrow input { width: 20px; height: 20px; accent-color: var(--stock); }
   .mrow.own b { color: var(--stock); }
+  /* výber sekcií Master set guide */
+  .sech { margin: 18px 0 8px; font-size: 1rem; }
+  .picker { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); margin: 0 0 18px; }
+  .tile { position: relative; display: grid; gap: 6px; text-align: left; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); font: inherit; cursor: pointer; }
+  .tile:hover { border-color: var(--action); }
+  .tile b { font-size: 1.05rem; }
+  .tile span { color: var(--muted); font-size: .9rem; }
+  .tile em { justify-self: start; font-style: normal; font-size: .7rem; font-weight: 800; padding: 2px 8px; border-radius: 99px; background: var(--action); color: var(--action-ink); }
+  .secbar { display: flex; gap: 10px; align-items: center; margin: 0 0 12px; flex-wrap: wrap; }
+  .secbar .back { margin-left: 0; }
+  .secseg { overflow-x: auto; max-width: 100%; }
+  .secseg button { white-space: nowrap; }
+  .tablewrap { overflow-x: auto; margin: 0 0 10px; }
+  .mtable { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
+  .mtable th, .mtable td { padding: 9px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+  .mtable thead th { font-size: .75rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .mtable tfoot th, .mtable tfoot td { font-weight: 800; border-bottom: 0; }
+  .mprog.sm { height: 8px; min-width: 90px; }
+  .vlist { margin: 0 0 14px; padding-left: 20px; }
+  .promos { margin-bottom: 8px; }
+
+  /* tlač */
+  .ptitle { margin: 6px 0 10px; }
+  .pcheck { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0 22px; }
+  .pc { display: grid; grid-template-columns: 20px 62px 1fr auto; gap: 8px; align-items: center; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: .9rem; }
+  .pc .box { width: 16px; height: 16px; border: 1.5px solid var(--ink); border-radius: 3px; font-size: .75rem; line-height: 13px; text-align: center; font-weight: 800; }
+  .pc .pn { font-weight: 800; color: var(--muted); }
+  .pc .pr { color: var(--muted); font-size: .82rem; }
+  .pholders { display: flex; flex-wrap: wrap; gap: 0; }
+  .ph2 { box-sizing: border-box; width: 63mm; height: 88mm; border: 1px dashed #888; display: grid; place-content: center; text-align: center; gap: 6px; padding: 6mm; background: #fff; color: #111; }
+  .phn { font-size: 20pt; font-weight: 800; }
+  .phname { font-size: 12pt; }
+  .phr { font-size: 9pt; color: #555; }
+  @media print {
+    @page { margin: 10mm; }
+    body * { visibility: hidden; }
+    .printable, .printable * { visibility: visible; }
+    .printable { position: absolute; left: 0; top: 0; width: 100%; color: #000; }
+    .pc { border-color: #999; }
+    .pc .box { border-color: #000; }
+  }
 </style>
 </head>
 <body>
