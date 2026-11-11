@@ -70,20 +70,21 @@ function normSetDex(s) {
 const fs = require('fs');
 const path = require('path');
 const MANUAL_SETS = [
-  { id: 'manual:me6', name: 'Delta Reign', series: 'Mega Evolution', total: 103, date: '2026/11/06', code: 'ME6', file: 'delta-reign.txt' },
+  { id: 'manual:me6', name: 'Delta Reign', series: 'Mega Evolution', total: 103, date: '2026/11/06', code: 'ME6', file: 'delta-reign.txt',
+    image: (n) => `https://pokecottagecdn.com/mastersets/images/cards/me6-delta-reign-${String(n).padStart(3, '0')}-official-en-20261030__large.webp` },
 ];
 
 function manualCards(set) {
   const lines = fs.readFileSync(path.join(__dirname, 'data', set.file), 'utf8').split('\n').filter(Boolean);
   return lines.map((l) => {
     const [number, name, rarity, flag] = l.split('|');
-    return { id: `${set.id}-${number}`, name, number, rarity, image: null, avg30: null, reverse: null, noRh: flag === 'norh', trend: null, updated: null, cmUrl: null };
+    return { id: `${set.id}-${number}`, name, number, rarity, image: set.image ? set.image(number) : null, avg30: null, reverse: null, noRh: flag === 'norh', trend: null, updated: null, cmUrl: null };
   });
 }
 
 function withManualSets(res) {
   const have = new Set(res.sets.map((s) => flat(s.name)));
-  const extra = MANUAL_SETS.filter((m) => !have.has(flat(m.name))).map(({ file, ...m }) => ({ ...m, logo: null, symbol: null }));
+  const extra = MANUAL_SETS.filter((m) => !have.has(flat(m.name))).map(({ file, image, ...m }) => ({ ...m, logo: null, symbol: null }));
   return extra.length ? { ...res, sets: [...extra, ...res.sets] } : res;
 }
 
@@ -179,7 +180,7 @@ async function setCards(id) {
       const match = (Array.isArray(dex) ? dex : []).find((d) => flat(d.name) === flat(def.name));
       if (match) {
         const img = new Map((await dexCards(match.id)).map((c) => [normNum(c.number), c.image]));
-        for (const c of mine) c.image = img.get(normNum(c.number)) || null;
+        for (const c of mine) c.image = img.get(normNum(c.number)) || c.image;
         result.source = 'tcgdex';
       }
     } catch { /* ostaneme pri vlastnom zozname */ }
@@ -220,6 +221,7 @@ async function setCards(id) {
       const c = byNum.get(normNum(m.number));
       if (!c) { result.cards.push(m); continue; }
       c.rarity = c.rarity || m.rarity;
+      c.image = c.image || m.image;
       if (m.noRh) c.noRh = true;
     }
   }
