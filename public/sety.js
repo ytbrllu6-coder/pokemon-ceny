@@ -506,7 +506,8 @@
     { id: 'rarity', t: 'Prehľad podľa rarity', d: 'Koľko kariet je v ktorej rarite a koľko z nich už máš.' },
     { id: 'promo', t: 'Promá a varianty', d: 'Promo karty k setu a prehľad reverse holo variantov.' },
     { id: 'size', t: 'Veľkosť binderu', d: 'Koľko strán a binderov potrebuješ pre 9, 12 a 16 vreciek.' },
-    { id: 'print', t: 'Tlačiteľný checklist', d: 'Checklist alebo placeholdery pre prázdne vrecká na tlač.' },
+    { id: 'holders', t: 'Placeholdery', d: 'Karty na tlač do prázdnych vreciek: číslo, názov a set v poradí binderu.' },
+    { id: 'print', t: 'Tlačiteľný checklist', d: 'Zoznam kariet s políčkami na odškrtnutie, na tlač.' },
   ];
   const hasPromos = () => !!(state.cards.promos && state.cards.promos.length);
 
@@ -558,7 +559,8 @@
       if (b) { m.section = b.dataset.sec || null; drawSection(); }
     };
     if (!sec) { drawPicker(); return; }
-    ({ binder: renderBinderSection, rarity: renderRarity, promo: renderPromo, size: renderSize, print: renderPrint })[sec]();
+    ({ binder: renderBinderSection, rarity: renderRarity, promo: renderPromo, size: renderSize,
+      holders: () => { m.printMode = 'holders'; renderPrint(); }, print: () => { m.printMode = 'checklist'; renderPrint(); } })[sec]();
   }
 
   // ---------- sekcia: vizuálny binder ----------
@@ -711,8 +713,6 @@
       : `<div class="pcheck">${list.map((it) => { const own = m.own.has(it.key); return `<div class="pc"><span class="box">${own ? '✓' : ''}</span><span class="pn">${num(it)}</span><span class="pname">${nm(it)}</span><span class="pr">${it.price ? eur.format(it.price) : ''}</span></div>`; }).join('')}</div>`;
     $('msec').innerHTML = `
       <div class="mctl">
-        <div class="mgroup"><span class="mlabel">Tlač</span>
-          <div class="seg" role="group" aria-label="Typ tlače"><button type="button" data-pm="checklist" aria-pressed="${m.printMode !== 'holders'}">Checklist</button><button type="button" data-pm="holders" aria-pressed="${m.printMode === 'holders'}">Placeholdery</button></div></div>
         ${m.printMode === 'holders' ? `<div class="mgroup"><span class="mlabel">Štýl placeholderov</span>
           <div class="seg" role="group" aria-label="Štýl placeholderov">${PH_STYLES.map(([k, t]) => `<button type="button" data-ps="${k}" aria-pressed="${m.printStyle === k}">${t}</button>`).join('')}</div></div>` : ''}
         ${toggleBtns()}
@@ -721,7 +721,6 @@
       </div>
       <p class="note">${list.length} ${list.length === 1 ? 'položka' : 'položiek'}${m.printMode === 'holders' ? '. Placeholdery majú veľkosť karty (63 × 88 mm), na A4 sa zmestí 9 na stranu. Vystrihni ich a vlož do prázdnych vreciek.' : '.'}</p>
       <div class="printable"><h3 class="ptitle">${esc(state.cur.name)}: ${m.printMode === 'holders' ? 'placeholdery' : 'checklist'}</h3>${body}</div>`;
-    document.querySelectorAll('[data-pm]').forEach((b) => { b.onclick = () => { m.printMode = b.dataset.pm; renderPrint(); }; });
     document.querySelectorAll('[data-ps]').forEach((b) => { b.onclick = () => { m.printStyle = b.dataset.ps; renderPrint(); }; });
     $('tpmiss').onclick = () => { m.printMissing = !m.printMissing; renderPrint(); };
     $('tprint').onclick = () => window.print();
