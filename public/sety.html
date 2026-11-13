@@ -204,10 +204,44 @@
   .pc .pn { font-weight: 800; color: var(--muted); }
   .pc .pr { color: var(--muted); font-size: .82rem; }
   .pholders { display: flex; flex-wrap: wrap; gap: 0; }
-  .ph2 { box-sizing: border-box; width: 63mm; height: 88mm; border: 1px dashed #888; display: grid; place-content: center; text-align: center; gap: 6px; padding: 6mm; background: #fff; color: #111; }
+  .ph2 { position: relative; overflow: hidden; box-sizing: border-box; width: 63mm; height: 88mm; border: 1px dashed #888; display: grid; place-content: center; text-align: center; gap: 6px; padding: 6mm; background: #fff; color: #111; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .ph2 > * { position: relative; z-index: 1; }
   .phn { font-size: 20pt; font-weight: 800; }
   .phname { font-size: 12pt; }
-  .phr { font-size: 9pt; color: #555; }
+  .phband, .phfoot { display: none; }
+  .phimg { display: none; }
+
+  /* štýl: podľa rarity (čiernobiely pás s názvom rarity hore, veľké číslo) */
+  .st-rarita { border: 1.5px solid #222; padding: 0; grid-template-rows: 13mm 1fr auto 14mm; place-content: stretch; gap: 0; }
+  .st-rarita .phband { display: grid; place-items: center; background: #222; color: #fff; font-size: 8.5pt; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+  .st-rarita.isrh .phband { background: repeating-linear-gradient(45deg, #222 0 5px, #555 5px 10px); }
+  .st-rarita .phn { align-self: end; font-size: 34pt; color: #111; line-height: 1; padding: 0 4mm; }
+  .st-rarita .phname { align-self: start; padding: 3mm 5mm 0; font-size: 12pt; font-weight: 700; }
+  .st-rarita .phfoot { display: block; align-self: end; padding: 0 4mm 4mm; font-size: 7.5pt; color: #666; }
+
+  /* štýl: kartový (číslo 001/103, názov, štítok variantu, podpis setu) */
+  .st-karta { border: 2px solid #222; border-radius: 3.5mm; padding: 7mm 5mm 5mm; grid-template-rows: auto 1fr auto auto; place-content: stretch; gap: 0; }
+  .st-karta .phn { order: 1; font-size: 22pt; font-weight: 800; letter-spacing: .03em; padding-bottom: 3mm; border-bottom: 1px solid #222; }
+  .st-karta .phname { order: 2; align-self: center; font-size: 14pt; font-weight: 800; line-height: 1.2; }
+  .st-karta .phband { order: 3; display: block; justify-self: center; border: 1.2px solid #222; border-radius: 99px; padding: 1.2mm 4mm; margin-bottom: 4mm; font-size: 8pt; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+  .st-karta .phfoot { order: 4; display: block; font-size: 7pt; letter-spacing: .14em; text-transform: uppercase; color: #555; }
+
+  /* štýl: čistý (číslo, meno, rarita) */
+  .st-cista .phfoot { display: block; font-size: 9pt; color: #555; }
+  .st-cista .phband { display: none; }
+
+  /* štýl: s náhľadom (vyblednutá karta v pozadí, aby si ju poznal) */
+  .st-nahlad { border: 1px solid #999; }
+  .st-nahlad .phimg { display: block; position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1); opacity: .3; }
+  .st-nahlad .phn { font-size: 30pt; }
+  .st-nahlad .phname { font-weight: 800; }
+  .st-nahlad .phfoot { display: block; font-size: 9pt; color: #333; }
+
+  /* štýl: úsporný (málo atramentu, malý text v rohu, vhodné na veľa kariet) */
+  .st-uspora { place-content: start; text-align: left; gap: 1mm; padding: 4mm; border: 1px dashed #aaa; }
+  .st-uspora .phn { font-size: 13pt; }
+  .st-uspora .phname { font-size: 9pt; color: #444; }
+
   @media print {
     @page { margin: 10mm; }
     body * { visibility: hidden; }

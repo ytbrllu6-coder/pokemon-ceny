@@ -213,7 +213,7 @@
       size: SIZES[store.size] ? store.size : (isWide() ? '4x3' : '3x3'),
       view: store.view === 'list' ? 'list' : 'binder',
       promo: store.promo === true,
-      section: null, printMode: 'checklist', printMissing: true,
+      section: null, printMode: 'checklist', printMissing: true, printStyle: 'karta',
       page: 0,
       filter: 'all',
       q: '',
@@ -679,6 +679,19 @@
   }
 
   // ---------- sekcia: tlačiteľný checklist ----------
+  const PH_STYLES = [['karta', 'Kartový'], ['rarita', 'Podľa rarity'], ['cista', 'Čistý'], ['nahlad', 'S náhľadom'], ['uspora', 'Úsporný']];
+  // štýl „Kartový“: číslo v tvare 001/103, názov, štítok variantu (STANDARD, HOLO, REVERSE HOLO, rarita)
+  const padNum = (it) => (it.promo || !/^\d+$/.test(String(it.c.number)) ? esc(it.c.number) : String(it.c.number).padStart(3, '0') + (state.cur.total ? '/' + esc(state.cur.total) : ''));
+  function phLabel(it) {
+    const r = String(it.c.rarity || '').toLowerCase();
+    if (it.rh) return 'Reverse holo';
+    if (it.promo) return 'Promo';
+    if (it.copy) return 'Holo';
+    if (r === 'double rare') return 'Holo';
+    if (!r || r === 'common' || r === 'uncommon' || r === 'rare') return 'Standard';
+    return it.c.rarity;
+  }
+
   function renderPrint() {
     const m = state.m;
     const slots = masterSlots();
@@ -686,12 +699,22 @@
     const num = (it) => (it.promo ? esc(it.c.number) : '#' + esc(it.c.number)) + (it.rh ? ' RH' : it.copy ? ' ×2' : '');
     const nm = (it) => esc(it.c.name) + (it.rh ? ' (reverse holo)' : it.copy ? ' (2. kópia)' : '');
     const body = m.printMode === 'holders'
-      ? `<div class="pholders">${list.map((it) => `<div class="ph2"><span class="phn">${num(it)}</span><span class="phname">${esc(it.c.name)}</span><span class="phr">${esc(it.rh ? 'Reverse holo' : it.c.rarity || '')}</span></div>`).join('')}</div>`
+      ? `<div class="pholders">${list.map((it) => {
+        const k = m.printStyle === 'karta';
+        const label = k ? phLabel(it) : it.rh ? 'Reverse holo' : it.copy ? 'Holo' : it.c.rarity || '';
+        const foot = state.cur.name;
+        return `<div class="ph2 st-${m.printStyle}${it.rh ? ' isrh' : ''}">
+          ${m.printStyle === 'nahlad' && it.c.image ? `<img class="phimg" src="${esc(it.c.image)}" alt="" referrerpolicy="no-referrer">` : ''}
+          <span class="phband">${esc(label)}</span><span class="phn">${k ? padNum(it) : (it.promo ? '' : '#') + esc(it.c.number)}</span><span class="phname">${esc(it.c.name)}</span>
+          <span class="phfoot">${esc(m.printStyle === 'nahlad' ? label : foot)}</span></div>`;
+      }).join('')}</div>`
       : `<div class="pcheck">${list.map((it) => { const own = m.own.has(it.key); return `<div class="pc"><span class="box">${own ? '✓' : ''}</span><span class="pn">${num(it)}</span><span class="pname">${nm(it)}</span><span class="pr">${it.price ? eur.format(it.price) : ''}</span></div>`; }).join('')}</div>`;
     $('msec').innerHTML = `
       <div class="mctl">
         <div class="mgroup"><span class="mlabel">Tlač</span>
           <div class="seg" role="group" aria-label="Typ tlače"><button type="button" data-pm="checklist" aria-pressed="${m.printMode !== 'holders'}">Checklist</button><button type="button" data-pm="holders" aria-pressed="${m.printMode === 'holders'}">Placeholdery</button></div></div>
+        ${m.printMode === 'holders' ? `<div class="mgroup"><span class="mlabel">Štýl placeholderov</span>
+          <div class="seg" role="group" aria-label="Štýl placeholderov">${PH_STYLES.map(([k, t]) => `<button type="button" data-ps="${k}" aria-pressed="${m.printStyle === k}">${t}</button>`).join('')}</div></div>` : ''}
         ${toggleBtns()}
         <div class="mgroup"><span class="mlabel">Obsah</span><div class="row"><button type="button" class="tog" id="tpmiss" aria-pressed="${m.printMissing}">Len chýbajúce</button></div></div>
         <button type="button" class="ghost" id="tprint">Vytlačiť</button>
@@ -699,6 +722,7 @@
       <p class="note">${list.length} ${list.length === 1 ? 'položka' : 'položiek'}${m.printMode === 'holders' ? '. Placeholdery majú veľkosť karty (63 × 88 mm), na A4 sa zmestí 9 na stranu. Vystrihni ich a vlož do prázdnych vreciek.' : '.'}</p>
       <div class="printable"><h3 class="ptitle">${esc(state.cur.name)}: ${m.printMode === 'holders' ? 'placeholdery' : 'checklist'}</h3>${body}</div>`;
     document.querySelectorAll('[data-pm]').forEach((b) => { b.onclick = () => { m.printMode = b.dataset.pm; renderPrint(); }; });
+    document.querySelectorAll('[data-ps]').forEach((b) => { b.onclick = () => { m.printStyle = b.dataset.ps; renderPrint(); }; });
     $('tpmiss').onclick = () => { m.printMissing = !m.printMissing; renderPrint(); };
     $('tprint').onclick = () => window.print();
     bindToggles();
