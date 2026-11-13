@@ -25,9 +25,37 @@ const MIME = {
   '.ico': 'image/x-icon',
 };
 
-function sendJson(res, status, body) {
-  res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
-  res.end(JSON.stringify(body));
+const zlib = require('zlib');
+const crypto = require('crypto');
+const packed = new Map(); // ETag + kódovanie -> stlačený súbor
+
+// odpoveď so stlačením (brotli/gzip) pre textové typy; výrazne zmenšuje prenos
+function respond(res, status, headers, body, cacheKey) {
+  let buf = Buffer.isBuffer(body) ? body : Buffer.from(body);
+  const ae = String((res.req && res.req.headers['accept-encoding']) || '');
+  headers.Vary = 'Accept-Encoding';
+  if (buf.length > 1024 && /text|json|javascript|svg/.test(headers['Content-Type'] || '')) {
+    const enc = /\bbr\b/.test(ae) ? 'br' : /\bgzip\b/.test(ae) ? 'gzip' : null;
+    if (enc) {
+      const key = cacheKey ? `${cacheKey}|${enc}` : null;
+      let out = key && packed.get(key);
+      if (!out) {
+        out = enc === 'br'
+          ? zlib.brotliCompressSync(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: cacheKey ? 9 : 4 } })
+          : zlib.gzipSync(buf);
+        if (key) packed.set(key, out);
+      }
+      buf = out;
+      headers['Content-Encoding'] = enc;
+    }
+  }
+  headers['Content-Length'] = buf.length;
+  res.writeHead(status, headers);
+  res.end(buf);
+}
+
+function sendJson(res, status, body, extra = {}) {
+  respond(res, status, { 'Content-Type': 'application/json; charset=utf-8', ...extra }, JSON.stringify(body));
 }
 
 const server = http.createServer(async (req, res) => {
@@ -163,7 +191,7 @@ const server = http.createServer(async (req, res) => {
   // Sety a karty v sete
   if (url.pathname === '/api/sets') {
     try {
-      return sendJson(res, 200, await listSets());
+      return sendJson(res, 200, await listSets(), { 'Cache-Control': 'public, max-age=600' });
     } catch (err) {
       console.error(err);
       return sendJson(res, 502, { error: 'Zoznam setov sa teraz nepodarilo načítať, skús to o chvíľu.' });
@@ -173,7 +201,7 @@ const server = http.createServer(async (req, res) => {
     const id = url.searchParams.get('id') || '';
     if (!/^(tcgdex:)?[A-Za-z0-9._-]{1,30}$/.test(id)) return sendJson(res, 400, { error: 'Neplatný set.' });
     try {
-      return sendJson(res, 200, await setCards(id));
+      return sendJson(res, 200, await setCards(id), { 'Cache-Control': 'public, max-age=600' });
     } catch (err) {
       console.error(err);
       return sendJson(res, 502, { error: 'Karty setu sa teraz nepodarilo načítať, skús to o chvíľu.' });
@@ -251,8 +279,14 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Nenájdené');
       return;
     }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
-    res.end(data);
+    // ETag + no-cache: prehliadač si súbor ponechá, ale vždy sa spýta, či je nový (304 = bez sťahovania, nikdy nie je zastaraný)
+    const etag = `"${crypto.createHash('md5').update(data).digest('hex')}"`;
+    const headers = { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', ETag: etag, 'Cache-Control': 'no-cache' };
+    if (req.headers['if-none-match'] === etag) {
+      res.writeHead(304, headers).end();
+      return;
+    }
+    respond(res, 200, headers, data, etag);
   });
 });
 

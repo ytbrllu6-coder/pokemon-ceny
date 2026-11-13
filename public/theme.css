@@ -1,0 +1,48 @@
+/* Spoločné vylepšenia vzhľadu a rýchlosti pre všetky stránky (načítava sa po vlastných štýloch stránky). */
+html { scroll-behavior: smooth; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* hlavička so sklom a hero s jemným svetlom */
+header.top { position: sticky; top: 0; z-index: 30; background: rgba(16, 26, 51, .95); -webkit-backdrop-filter: saturate(1.5) blur(12px); backdrop-filter: saturate(1.5) blur(12px); box-shadow: 0 1px 0 rgba(255, 255, 255, .06); }
+.hero {
+  background:
+    radial-gradient(900px 340px at 88% -20%, rgba(108, 140, 255, .38), transparent 62%),
+    radial-gradient(700px 300px at -5% 115%, rgba(255, 194, 26, .2), transparent 60%),
+    var(--ink);
+}
+.nav a { transition: background .18s, color .18s; }
+
+/* plynulé animácie a "zdvihnutie" kariet */
+.set, .card, .winner, .row, .outcard, .cardres, .it, .prod, .cand, .go, .scanbtn, .filebtn, .add {
+  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease, background-color .18s ease, filter .18s ease;
+}
+@media (hover: hover) {
+  .set:hover, .card:hover { transform: translateY(-4px); box-shadow: 0 14px 28px -14px rgba(16, 26, 51, .45); }
+  .go:hover { filter: brightness(1.08); }
+}
+.go:active, .add:active { transform: scale(.97); }
+.set, .card { border-radius: 14px; }
+.card img, .set .logo img { transition: transform .25s ease; }
+@media (hover: hover) { .card:hover img { transform: scale(1.03); } }
+.go:not(.quiet) { background-image: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0)); box-shadow: 0 6px 16px -8px var(--action); }
+
+/* načítavanie: tečúci pás namiesto prázdneho boxu */
+.skel {
+  background: linear-gradient(90deg, var(--surface) 0%, var(--line) 50%, var(--surface) 100%);
+  background-size: 220% 100%; animation: shimmer 1.3s linear infinite;
+}
+@keyframes shimmer { from { background-position: 120% 0; } to { background-position: -120% 0; } }
+
+/* plynulé zobrazenie výsledkov */
+.sets, .cards, #out, #items, #prods { animation: rise .28s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* rýchlejšie vykresľovanie dlhých zoznamov: prehliadač nekreslí, čo nie je vidno */
+.card, .set, .it, .prod, .row { content-visibility: auto; contain-intrinsic-size: auto 260px; }
+.it, .prod, .row { contain-intrinsic-size: auto 96px; }
+img { image-rendering: auto; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
