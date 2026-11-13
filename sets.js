@@ -108,8 +108,35 @@ async function listSetsRaw() {
     if (sets.length) return { source: 'pokemontcg', sets };
   } catch { /* skúsime zálohu */ }
   const list = await getJson(`${TCGDEX}/sets`);
-  return { source: 'tcgdex', sets: (Array.isArray(list) ? list : []).map(normSetDex).reverse() };
+  const ser = await dexSeries();
+  const sets = (Array.isArray(list) ? list : []).map((d) => {
+    const n = normSetDex(d);
+    if (n.series === 'Ostatné') n.series = seriesOf(d.id, ser);
+    return n;
+  });
+  return { source: 'tcgdex', sets: sets.reverse() };
 }
+
+// TCGdex v zozname setov sériu nevracia, preto ju skladáme zo zoznamu sérií (a pri chybe z predpony id setu)
+const SERIES_BY_PREFIX = {
+  me: 'Mega Evolution', sv: 'Scarlet & Violet', swsh: 'Sword & Shield', sm: 'Sun & Moon', xy: 'XY', bw: 'Black & White',
+  hgss: 'HeartGold & SoulSilver', pl: 'Platinum', dp: 'Diamond & Pearl', ex: 'EX', neo: 'Neo', base: 'Base', gym: 'Gym', ecard: 'E-Card',
+};
+let dexSeriesCache = null;
+async function dexSeries() {
+  if (dexSeriesCache && Date.now() - dexSeriesCache.t < 6 * 3600 * 1000) return dexSeriesCache.map;
+  const map = new Map();
+  try {
+    const series = await getJson(`${TCGDEX}/series`);
+    await pool(Array.isArray(series) ? series : [], 6, async (x) => {
+      const d = await getJson(`${TCGDEX}/series/${encodeURIComponent(x.id)}`);
+      for (const st of d.sets || []) map.set(st.id, d.name || x.name);
+    });
+  } catch { /* použijeme predpony */ }
+  if (map.size) dexSeriesCache = { t: Date.now(), map };
+  return map;
+}
+const seriesOf = (id, map) => map.get(id) || SERIES_BY_PREFIX[(String(id).match(/^[a-z]+/i) || [''])[0].toLowerCase()] || 'Ostatné';
 
 const flat = (t) => String(t || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '');
 

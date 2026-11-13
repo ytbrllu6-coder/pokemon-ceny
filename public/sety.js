@@ -55,7 +55,7 @@
       if (!groups.has(s.series)) groups.set(s.series, []);
       groups.get(s.series).push(s);
     }
-    $('list').innerHTML = [...groups].map(([series, list]) => `
+    $('list').innerHTML = [...groups].sort((a, b) => (a[0] === 'Ostatné') - (b[0] === 'Ostatné')).map(([series, list]) => `
       <h2 class="series">${esc(series)}</h2>
       <div class="sets">${list.map((s) => `
         <a class="set" href="#${encodeURIComponent(s.id)}${MASTER ? '/master' : ''}">
