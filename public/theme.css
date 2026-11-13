@@ -60,3 +60,19 @@ img { image-rendering: auto; }
 @keyframes pop { 0% { transform: translateX(-50%) scale(.4); } 60% { transform: translateX(-50%) scale(1.25); } 100% { transform: translateX(-50%) scale(1); } }
 .card, .cardres > img, .slot { will-change: transform; }
 @media (max-width: 680px) { .hero { padding-bottom: 70px; } .spr { max-height: 50px; } }
+
+/* Vejár slávnych kariet */
+.fanwrap { background: linear-gradient(180deg, var(--ink) 0%, color-mix(in srgb, var(--ink) 70%, #000) 100%); padding: 6px 0 40px; overflow: hidden; }
+.fanhint { margin: 0 0 14px; text-align: center; color: #b8c2dc; font-size: .9rem; letter-spacing: .04em; text-transform: uppercase; }
+.fan { display: flex; justify-content: center; align-items: flex-end; padding: 18px 0 8px; }
+.fc { flex: 0 0 auto; width: clamp(96px, 15vw, 168px); margin: 0 clamp(-30px, -2.6vw, -16px); transform: translateY(var(--y)) rotate(var(--r)); transform-origin: 50% 110%; transition: transform .28s cubic-bezier(.2, .8, .2, 1), filter .28s ease; filter: drop-shadow(0 12px 16px rgba(0, 0, 0, .55)); position: relative; }
+.fc img { width: 100%; display: block; border-radius: 6% / 4.3%; aspect-ratio: 63 / 88; background: #1b2540; }
+@media (hover: hover) {
+  .fan:hover .fc { filter: drop-shadow(0 8px 10px rgba(0, 0, 0, .5)) brightness(.78); }
+  .fan .fc:hover { transform: translateY(-30px) rotate(0deg) scale(1.16); z-index: 20 !important; filter: drop-shadow(0 22px 28px rgba(0, 0, 0, .7)) brightness(1); }
+}
+.fc:focus-visible { outline: 3px solid var(--tag); outline-offset: 4px; z-index: 20 !important; transform: translateY(-20px) rotate(0deg) scale(1.1); }
+@media (max-width: 680px) { .fc { width: 22vw; margin: 0 -4vw; } }
+
+.hero.has-fan { background: radial-gradient(900px 340px at 88% -20%, rgba(108, 140, 255, .38), transparent 62%), var(--ink); }
+.fan { padding-top: 56px; }
