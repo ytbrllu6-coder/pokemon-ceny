@@ -193,7 +193,8 @@
   // Reverse holo: ak má karta cenu reverse holo, určite existuje; inak odhad podľa rarity (Common, Uncommon, Rare)
   const RH_RARITIES = new Set(['common', 'uncommon', 'rare']);
   const rar = (c) => String(c.rarity || '').toLowerCase();
-  const rhEligible = (c) => c.reverse > 0 || (!c.noRh && RH_RARITIES.has(rar(c)));
+  // Ak poznáme raritu, rozhoduje ona (hity ako ex a Illustration Rare reverse holo nemajú, aj keď im zdroj dá „holo“ cenu); cena rozhoduje, len keď rarita chýba
+  const rhEligible = (c) => (c.rarity ? !c.noRh && RH_RARITIES.has(rar(c)) : c.reverse > 0);
   // Duplicate EX sa týka len bežných ex kariet (Double Rare, staré Rare Holo EX); full arty, Illustration Rare a Special Illustration Rare sa nezdvojujú
   const isEx = (c) => rar(c) === 'double rare' || /^rare holo ex/.test(rar(c)) || (!c.rarity && /(^|[\s-])ex$/i.test(c.name || ''));
   const rhPossible = () => {
