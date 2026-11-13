@@ -258,5 +258,6 @@ let tried = 0;
 try { tried = Number(localStorage.getItem('pokeceny.pfTried')) || 0; } catch {}
 if (items.some((i) => i.price == null) && Date.now() - tried > 6 * 3600 * 1000) refreshAll(true);
 </script>
+<script src="/theme.js" defer></script>
 </body>
 </html>

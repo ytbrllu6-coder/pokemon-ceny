@@ -46,3 +46,17 @@ img { image-rendering: auto; }
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Pokémoni v úvodnej sekcii */
+.hero { position: relative; overflow: hidden; padding-bottom: 76px; }
+.sprites { position: absolute; left: 0; right: 0; bottom: 0; height: 68px; pointer-events: none; }
+.spr {
+  position: absolute; bottom: 4px; max-height: 60px; width: auto; transform: translateX(-50%);
+  image-rendering: pixelated; pointer-events: auto; cursor: pointer;
+  filter: drop-shadow(0 6px 4px rgba(0, 0, 0, .35)); animation: hop 1.4s ease-in-out infinite;
+}
+.spr.pop { animation: pop .45s ease-out, hop 1.4s ease-in-out .45s infinite; }
+@keyframes hop { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-9px); } }
+@keyframes pop { 0% { transform: translateX(-50%) scale(.4); } 60% { transform: translateX(-50%) scale(1.25); } 100% { transform: translateX(-50%) scale(1); } }
+.card, .cardres > img, .slot { will-change: transform; }
+@media (max-width: 680px) { .hero { padding-bottom: 70px; } .spr { max-height: 50px; } }
